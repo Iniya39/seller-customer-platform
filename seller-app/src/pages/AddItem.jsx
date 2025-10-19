@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-export default function AddItem() {
+export default function AddItem({ user }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [productData, setProductData] = useState({
     name: "",
@@ -11,7 +11,8 @@ export default function AddItem() {
     price: 0,
     discountedPrice: 0,
     photo: "",
-    category: ""
+    category: "",
+    seller: user?._id || user?.id || ""
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -78,12 +79,27 @@ export default function AddItem() {
       return;
     }
 
+    // Ensure seller ID is included - user object from login contains _id
+    const productToSave = {
+      ...productData,
+      seller: user?._id || user?.id || user?.seller
+    };
+
+    // If no valid seller ID, show error
+    if (!productToSave.seller) {
+      alert("Error: Seller information not found. Please login again.");
+      return;
+    }
+
+    console.log("Saving product:", productToSave); // Debug log
+
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/api/products", productData);
+      const response = await axios.post("http://localhost:5000/api/products", productToSave);
       alert("Product added successfully!");
       navigate("/");
     } catch (error) {
+      console.error("Error details:", error.response?.data); // Debug log
       alert("Failed to add product: " + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
@@ -99,7 +115,8 @@ export default function AddItem() {
       price: 0,
       discountedPrice: 0,
       photo: "",
-      category: ""
+      category: "",
+      seller: user?._id || user?.id || ""
     });
   };
 

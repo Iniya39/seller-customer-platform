@@ -14,7 +14,7 @@ export default function App() {
       {user ? (
         <Routes>
           <Route path="/" element={<Dashboard user={user} />} />
-          <Route path="/add-item" element={<AddItem />} />
+          <Route path="/add-item" element={<AddItem user={user} />} />
           <Route path="/edit-item/:id" element={<EditItem />} />
 
           <Route path="/update-delivery" element={<UpdateDelivery />} />

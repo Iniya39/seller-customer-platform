@@ -13,7 +13,7 @@ export default function LoginPage({ setLoggedIn }) {
       localStorage.setItem("token", res.data.token);
 
       alert("Login successful!");
-      setLoggedIn(true);
+      setLoggedIn(res.data.user);
     } catch (err) {
       alert("Login failed: " + (err.response?.data?.error || err.message));
     }
@@ -89,3 +89,4 @@ export default function LoginPage({ setLoggedIn }) {
     </div>
   );
 }
+
