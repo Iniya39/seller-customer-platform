@@ -4,7 +4,7 @@ import Product from '../models/productModel.js';
 // Create a new product
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, category, price, discountedPrice, stock, photo, seller } = req.body;
+    const { name, description, category, price, discountedPrice, stock, seller } = req.body;
 
     // Validate required fields
     if (!name || !description || !category || !price || !stock) {
@@ -21,6 +21,14 @@ export const createProduct = async (req, res) => {
       });
     }
 
+    // If file uploaded, construct public URL
+    let photoUrl = undefined;
+    if (req.file) {
+      // Serve via /uploads; path configured in server.js
+      const filename = req.file.filename;
+      photoUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+    }
+
     // Create new product
     const product = new Product({
       name,
@@ -29,7 +37,7 @@ export const createProduct = async (req, res) => {
       price,
       discountedPrice: discountedPrice || price,
       stock,
-      photo,
+      photo: photoUrl || req.body.photo,
       seller: seller || req.user?.id // Use seller from request or current user
     });
 

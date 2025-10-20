@@ -7,6 +7,8 @@ export default function Dashboard({ user }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'products'
+  const [zoomImageUrl, setZoomImageUrl] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch products when component mounts
   useEffect(() => {
@@ -169,6 +171,22 @@ export default function Dashboard({ user }) {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <div style={{ textAlign: "left", maxHeight: "600px", overflowY: "auto" }}>
+            <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "center" }}>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: "100%",
+                  maxWidth: "400px",
+                  padding: "0.75rem 1rem",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  fontSize: "1rem"
+                }}
+              />
+            </div>
             {loading ? (
               <p style={{ textAlign: "center", color: "#888" }}>Loading products...</p>
             ) : Object.keys(groupedProducts).length === 0 ? (
@@ -177,7 +195,18 @@ export default function Dashboard({ user }) {
                 <p>Start by adding your first product!</p>
               </div>
             ) : (
-              Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+              Object.entries(groupedProducts).map(([category, categoryProducts]) => {
+                const filtered = categoryProducts.filter(p => {
+                  const q = searchTerm.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (p.name || '').toLowerCase().includes(q) ||
+                    (p.description || '').toLowerCase().includes(q) ||
+                    (p.category || '').toLowerCase().includes(q)
+                  );
+                });
+                if (filtered.length === 0) return null;
+                return (
                 <div key={category} style={{ marginBottom: "2rem" }}>
                   <h3 style={{ 
                     color: "#646cff", 
@@ -186,50 +215,104 @@ export default function Dashboard({ user }) {
                     borderBottom: "2px solid #646cff",
                     paddingBottom: "0.5rem"
                   }}>
-                    {category} ({categoryProducts.length} items)
+                    {category} ({filtered.length} items)
                   </h3>
                   <div style={{ 
                     display: "grid", 
                     gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
                     gap: "1rem" 
                   }}>
-                    {categoryProducts.map((product) => (
+                    {filtered.map((product) => (
                       <div key={product._id} style={{
                         backgroundColor: "rgba(255, 255, 255, 0.05)",
-                        padding: "1.5rem",
+                        padding: "1rem",
                         borderRadius: "8px",
                         border: "1px solid rgba(255, 255, 255, 0.1)"
                       }}>
-                        <h4 style={{ color: "#646cff", marginBottom: "0.5rem", fontSize: "1.1rem" }}>
-                          {product.name}
-                        </h4>
-                        <p style={{ color: "#ccc", marginBottom: "1rem", fontSize: "0.9rem" }}>
-                          {product.description}
-                        </p>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ color: "#888", fontSize: "0.8rem" }}>
-                            Stock: {product.stock} | Price: ${product.price}
-                          </span>
-                          {product.photo && (
+                        {product.photo && (
+                          <div style={{ marginBottom: "0.75rem" }}>
                             <img 
-                              src={product.photo} 
+                              src={product.photo}
                               alt={product.name}
                               style={{ 
-                                width: "50px", 
-                                height: "50px", 
-                                objectFit: "cover", 
-                                borderRadius: "4px" 
+                                width: "100%",
+                                maxHeight: "220px",
+                                objectFit: "cover",
+                                borderRadius: "6px",
+                                cursor: "zoom-in",
+                                backgroundColor: "#222"
                               }}
                               onError={(e) => e.target.style.display = 'none'}
+                              onClick={() => setZoomImageUrl(product.photo)}
                             />
+                          </div>
+                        )}
+                        <div style={{ marginBottom: "0.5rem" }}>
+                          <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Product Name</div>
+                          <div style={{ color: "#fff", fontWeight: 600 }}>{product.name}</div>
+                        </div>
+                        <div style={{ marginBottom: "0.5rem" }}>
+                          <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Description</div>
+                          <div style={{ color: "#ccc" }}>{product.description}</div>
+                        </div>
+                        <div style={{ marginBottom: "0.5rem" }}>
+                          <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Stock</div>
+                          <div style={{ color: "#fff" }}>{product.stock}</div>
+                        </div>
+                        <div>
+                          <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Price</div>
+                          {product.discountedPrice && product.discountedPrice < product.price ? (
+                            <div>
+                              <span style={{ textDecoration: "line-through", marginRight: "0.5rem", color: "#bbb" }}>
+                                ${product.price}
+                              </span>
+                              <span style={{ color: "#4caf50", fontWeight: 700 }}>
+                                ${product.discountedPrice}
+                              </span>
+                            </div>
+                          ) : (
+                            <div style={{ color: "#fff" }}>${product.price}</div>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
+          </div>
+        )}
+        {/* Zoom Modal */}
+        {zoomImageUrl && (
+          <div 
+            onClick={() => setZoomImageUrl(null)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.8)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              padding: "1rem"
+            }}
+          >
+            <img 
+              src={zoomImageUrl}
+              alt="Zoomed product"
+              style={{
+                maxWidth: "90vw",
+                maxHeight: "90vh",
+                objectFit: "contain",
+                borderRadius: "8px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
       </div>

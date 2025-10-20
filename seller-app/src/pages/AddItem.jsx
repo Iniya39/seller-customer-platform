@@ -69,7 +69,11 @@ export default function AddItem({ user }) {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, files } = e.target;
+    if (name === 'photoFile') {
+      setProductData(prev => ({ ...prev, photoFile: files && files[0] ? files[0] : null }));
+      return;
+    }
     setProductData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -95,7 +99,27 @@ export default function AddItem({ user }) {
 
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/api/products", productToSave);
+      // Build FormData for multipart upload
+      const formData = new FormData();
+      formData.append('name', productToSave.name);
+      formData.append('description', productToSave.description);
+      formData.append('category', productToSave.category);
+      formData.append('price', productToSave.price);
+      if (productToSave.discountedPrice !== undefined && productToSave.discountedPrice !== null) {
+        formData.append('discountedPrice', productToSave.discountedPrice);
+      }
+      formData.append('stock', productToSave.stock);
+      formData.append('seller', productToSave.seller);
+      if (productToSave.photoFile) {
+        formData.append('photo', productToSave.photoFile);
+      } else if (productToSave.photo) {
+        // Fallback: URL string
+        formData.append('photo', productToSave.photo);
+      }
+
+      const response = await axios.post("http://localhost:5000/api/products", formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       alert("Product added successfully!");
       navigate("/");
     } catch (error) {
@@ -299,22 +323,27 @@ export default function AddItem({ user }) {
                 </div>
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                    Photo URL
+                    Product Photo
                   </label>
                   <input
-                    type="url"
-                    name="photo"
-                    value={productData.photo}
+                    type="file"
+                    name="photoFile"
+                    accept="image/*"
                     onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
                     style={{
                       width: "100%",
-                      padding: "0.75rem",
+                      padding: "0.5rem",
                       borderRadius: "6px",
                       border: "1px solid #ccc",
-                      fontSize: "1rem"
+                      fontSize: "1rem",
+                      background: "white"
                     }}
                   />
+                  {productData.photoFile && (
+                    <div style={{ marginTop: "0.5rem", color: "#555", fontSize: "0.9rem" }}>
+                      Selected: <span style={{ fontWeight: 600 }}>{productData.photoFile.name}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
