@@ -1,10 +1,12 @@
 // src/pages/EditItem.jsx
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import axios from "axios";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { getProductById, updateProduct } from "../services/productService";
 
-export default function EditItem({ itemId }) {
-    const { id } = useParams();
+export default function EditItem() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [item, setItem] = useState({
     name: "",
     description: "",
@@ -13,25 +15,77 @@ export default function EditItem({ itemId }) {
     discountedPrice: 0,
     photo: "",
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   // Fetch item details when page loads
   useEffect(() => {
-    if (!itemId) return;
-    axios.get(`http://localhost:5000/api/products/${itemId}`)
-      .then(res => setItem(res.data))
-      .catch(err => console.error("Error fetching item:", err));
-  }, [itemId]);
+    if (!id) return;
+    
+    setLoading(true);
+    setError("");
+    
+    getProductById(id)
+      .then(productData => {
+        setItem(productData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching item:", err);
+        setError(err.message || "Failed to load product details");
+        setLoading(false);
+      });
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setItem(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    axios.put(`http://localhost:5000/api/products/${itemId}`, item)
-      .then(res => alert("Item updated successfully"))
-      .catch(err => alert("Failed to update item"));
+  const handleSave = async () => {
+    if (!id) {
+      setError("Product ID is missing");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const response = await updateProduct(id, item);
+      
+      if (response.message) {
+        alert("Product updated successfully!");
+        // Navigate back to dashboard with modal state
+        navigate("/", { state: { returnToModal: true } });
+      }
+    } catch (err) {
+      console.error("Error updating product:", err);
+      setError(err.message || "Failed to update product");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const handleCancel = () => {
+    // Navigate back to dashboard with modal state
+    navigate("/", { state: { returnToModal: true } });
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        minHeight: "100vh",
+        fontSize: "1.2rem"
+      }}>
+        Loading product details...
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
@@ -52,7 +106,20 @@ export default function EditItem({ itemId }) {
         boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
         width: "100%"
       }}>
-        <h2 style={{ marginBottom: "2rem", fontSize: "2rem", textAlign: "center" }}>Edit Item</h2>
+        <h2 style={{ marginBottom: "2rem", fontSize: "2rem", textAlign: "center" }}>Edit Product</h2>
+        
+        {error && (
+          <div style={{
+            backgroundColor: "#fee",
+            color: "#c33",
+            padding: "1rem",
+            borderRadius: "6px",
+            marginBottom: "1rem",
+            border: "1px solid #fcc"
+          }}>
+            {error}
+          </div>
+        )}
         
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div>
@@ -162,37 +229,41 @@ export default function EditItem({ itemId }) {
         }}>
           <button 
             onClick={handleSave}
+            disabled={saving}
             style={{
               padding: "0.75rem 1.5rem",
               borderRadius: "6px",
               fontSize: "1rem",
               fontWeight: "600",
-              cursor: "pointer",
+              cursor: saving ? "not-allowed" : "pointer",
               transition: "all 0.3s ease",
-              backgroundColor: "#646cff",
+              backgroundColor: saving ? "#999" : "#646cff",
               color: "white",
-              border: "none"
+              border: "none",
+              opacity: saving ? 0.7 : 1
             }}
-            onMouseOver={(e) => e.target.style.backgroundColor = "#535bf2"}
-            onMouseOut={(e) => e.target.style.backgroundColor = "#646cff"}
+            onMouseOver={(e) => !saving && (e.target.style.backgroundColor = "#535bf2")}
+            onMouseOut={(e) => !saving && (e.target.style.backgroundColor = "#646cff")}
           >
-            Save
+            {saving ? "Saving..." : "Save Changes"}
           </button>
           <button 
-            onClick={() => alert("Edit cancelled")}
+            onClick={handleCancel}
+            disabled={saving}
             style={{
               padding: "0.75rem 1.5rem",
               borderRadius: "6px",
               fontSize: "1rem",
               fontWeight: "600",
-              cursor: "pointer",
+              cursor: saving ? "not-allowed" : "pointer",
               transition: "all 0.3s ease",
-              backgroundColor: "#666",
+              backgroundColor: saving ? "#999" : "#666",
               color: "white",
-              border: "none"
+              border: "none",
+              opacity: saving ? 0.7 : 1
             }}
-            onMouseOver={(e) => e.target.style.backgroundColor = "#555"}
-            onMouseOut={(e) => e.target.style.backgroundColor = "#666"}
+            onMouseOver={(e) => !saving && (e.target.style.backgroundColor = "#555")}
+            onMouseOut={(e) => !saving && (e.target.style.backgroundColor = "#666")}
           >
             Cancel
           </button>
