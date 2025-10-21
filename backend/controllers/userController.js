@@ -12,7 +12,12 @@ export const registerUser = async (req, res) => {
       return res.status(403).json({ error: "Invalid unique code" });
     }
 
-    const newUser = await User.create({ name, email, password, role: "customer" });
+    const newUser = await User.create({ 
+      name: name.trim(), // Trim whitespace from name during registration
+      email, 
+      password, 
+      role: "customer" 
+    });
     res.status(201).json(newUser);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -36,7 +41,8 @@ export const loginUser = async (req, res) => {
     if (!user) return res.status(404).json({ error: "Invalid credentials" });
 
     // If name provided, ensure it matches stored name to prevent mistaken sign-ins
-    if (name && user.name !== name) {
+    // Compare names case-insensitively and trim whitespace
+    if (name && user.name.toLowerCase().trim() !== name.toLowerCase().trim()) {
       return res.status(400).json({ error: "Name does not match our records" });
     }
 

@@ -2,6 +2,13 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
+  productId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    uppercase: true
+  },
   name: {
     type: String,
     required: true,
@@ -41,6 +48,16 @@ const productSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  sellerName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  sellerEmail: {
+    type: String,
+    required: true,
+    trim: true
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -55,6 +72,7 @@ const productSchema = new mongoose.Schema({
 });
 
 // Index for better search performance
+productSchema.index({ productId: 1 });
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ category: 1 });
 productSchema.index({ seller: 1 });

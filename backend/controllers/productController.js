@@ -4,12 +4,12 @@ import Product from '../models/productModel.js';
 // Create a new product
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, category, price, discountedPrice, stock, seller } = req.body;
+    const { productId, name, description, category, price, discountedPrice, stock, seller, sellerName, sellerEmail } = req.body;
 
     // Validate required fields
-    if (!name || !description || !category || !price || !stock) {
+    if (!productId || !name || !description || !category || !price || !stock || !seller || !sellerName || !sellerEmail) {
       return res.status(400).json({ 
-        error: 'Missing required fields: name, description, category, price, and stock are required' 
+        error: 'Missing required fields: productId, name, description, category, price, stock, seller, sellerName, and sellerEmail are required' 
       });
     }
 
@@ -18,6 +18,14 @@ export const createProduct = async (req, res) => {
     if (!validCategories.includes(category)) {
       return res.status(400).json({ 
         error: 'Invalid category. Must be one of: Electronics, Clothing, Books, Furniture' 
+      });
+    }
+
+    // Check if productId already exists
+    const existingProduct = await Product.findOne({ productId: productId.toUpperCase() });
+    if (existingProduct) {
+      return res.status(400).json({ 
+        error: 'Product ID already exists. Please use a different Product ID.' 
       });
     }
 
@@ -31,6 +39,7 @@ export const createProduct = async (req, res) => {
 
     // Create new product
     const product = new Product({
+      productId: productId.toUpperCase(),
       name,
       description,
       category,
@@ -38,7 +47,9 @@ export const createProduct = async (req, res) => {
       discountedPrice: discountedPrice || price,
       stock,
       photo: photoUrl || req.body.photo,
-      seller: seller || req.user?.id // Use seller from request or current user
+      seller,
+      sellerName,
+      sellerEmail
     });
 
     const savedProduct = await product.save();

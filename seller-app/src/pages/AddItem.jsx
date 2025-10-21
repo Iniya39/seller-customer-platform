@@ -5,6 +5,7 @@ import axios from "axios";
 export default function AddItem({ user }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [productData, setProductData] = useState({
+    productId: "",
     name: "",
     description: "",
     stock: 0,
@@ -12,7 +13,10 @@ export default function AddItem({ user }) {
     discountedPrice: 0,
     photo: "",
     category: "",
-    seller: user?._id || user?.id || ""
+    seller: user?._id || user?.id || "",
+    sellerName: user?.name || "",
+    sellerEmail: user?.email || "",
+    userId: user?._id || user?.id || ""
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -78,15 +82,17 @@ export default function AddItem({ user }) {
   };
 
   const handleSave = async () => {
-    if (!productData.name || !productData.description) {
-      alert("Please fill in product name and description");
+    if (!productData.productId || !productData.name || !productData.description) {
+      alert("Please fill in Product ID, product name and description");
       return;
     }
 
     // Ensure seller ID is included - user object from login contains _id
     const productToSave = {
       ...productData,
-      seller: user?._id || user?.id || user?.seller
+      seller: user?._id || user?.id || user?.seller,
+      sellerName: user?.name || "",
+      sellerEmail: user?.email || ""
     };
 
     // If no valid seller ID, show error
@@ -101,6 +107,7 @@ export default function AddItem({ user }) {
     try {
       // Build FormData for multipart upload
       const formData = new FormData();
+      formData.append('productId', productToSave.productId);
       formData.append('name', productToSave.name);
       formData.append('description', productToSave.description);
       formData.append('category', productToSave.category);
@@ -110,6 +117,8 @@ export default function AddItem({ user }) {
       }
       formData.append('stock', productToSave.stock);
       formData.append('seller', productToSave.seller);
+      formData.append('sellerName', productToSave.sellerName);
+      formData.append('sellerEmail', productToSave.sellerEmail);
       if (productToSave.photoFile) {
         formData.append('photo', productToSave.photoFile);
       } else if (productToSave.photo) {
@@ -133,6 +142,7 @@ export default function AddItem({ user }) {
   const resetForm = () => {
     setSelectedCategory(null);
     setProductData({
+      productId: "",
       name: "",
       description: "",
       stock: 0,
@@ -140,7 +150,10 @@ export default function AddItem({ user }) {
       discountedPrice: 0,
       photo: "",
       category: "",
-      seller: user?._id || user?.id || ""
+      seller: user?._id || user?.id || "",
+      sellerName: user?.name || "",
+      sellerEmail: user?.email || "",
+      userId: user?._id || user?.id || ""
     });
   };
 
@@ -222,6 +235,26 @@ export default function AddItem({ user }) {
             }}>
               <div>
                 <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                  Product ID *
+                </label>
+                <input
+                  type="text"
+                  name="productId"
+                  value={productData.productId}
+                  onChange={handleChange}
+                  placeholder="Enter unique product ID (e.g., ELEC001, CLOTH002)"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    fontSize: "1rem"
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
                   Product Name *
                 </label>
                 <input
@@ -259,6 +292,45 @@ export default function AddItem({ user }) {
                     resize: "vertical"
                   }}
                 />
+              </div>
+
+              {/* Seller Information Display */}
+              <div style={{ 
+                padding: "1rem", 
+                background: "#f8f9fa", 
+                borderRadius: "6px", 
+                border: "1px solid #e9ecef" 
+              }}>
+                <h4 style={{ margin: "0 0 0.5rem 0", color: "#495057", fontSize: "1rem" }}>Seller Information</h4>
+                <div style={{ fontSize: "0.9rem", color: "#6c757d", marginBottom: "1rem" }}>
+                  <div><strong>Name:</strong> {productData.sellerName || "Not available"}</div>
+                  <div><strong>Email:</strong> {productData.sellerEmail || "Not available"}</div>
+                  <div><strong>Seller ID:</strong> {productData.seller || "Not available"}</div>
+                </div>
+                
+                {/* Manual User ID Input */}
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500", fontSize: "0.9rem" }}>
+                    User ID (if different from Seller ID)
+                  </label>
+                  <input
+                    type="text"
+                    name="userId"
+                    value={productData.userId || productData.seller}
+                    onChange={handleChange}
+                    placeholder="Enter your User ID"
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      borderRadius: "4px",
+                      border: "1px solid #ccc",
+                      fontSize: "0.9rem"
+                    }}
+                  />
+                  <div style={{ fontSize: "0.8rem", color: "#6c757d", marginTop: "0.25rem" }}>
+                    This is used for cart functionality. Usually same as Seller ID.
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>

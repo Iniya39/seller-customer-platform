@@ -33,7 +33,12 @@ export default function Dashboard() {
           >
             View Products
           </button>
-          <button style={cardButtonStyle}>Your Cart</button>
+          <button 
+            style={cardButtonStyle}
+            onClick={() => window.location.href = '/cart'}
+          >
+            Your Cart
+          </button>
           <button style={cardButtonStyle}>View Orders</button>
         </div>
       </div>
