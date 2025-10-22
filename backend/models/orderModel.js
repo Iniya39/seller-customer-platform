@@ -71,6 +71,26 @@ const orderSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
+    },
+    // Variant information for products with multi-attribute variations
+    variant: {
+      combination: {
+        type: Map,
+        of: String
+      },
+      price: {
+        type: Number,
+        min: 0
+      },
+      originalPrice: {
+        type: Number,
+        min: 0
+      },
+      stock: {
+        type: String,
+        enum: ['in_stock', 'out_of_stock'],
+        default: 'in_stock'
+      }
     }
   }],
   totalAmount: {

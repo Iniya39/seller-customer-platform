@@ -39,43 +39,61 @@ const productSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
-  // Product variations (for products with different sizes, colors, etc.)
-  variations: [{
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    price: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    discountedPrice: {
-      type: Number,
-      min: 0
-    },
-    stock: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0
-    },
-    isActive: {
-      type: Boolean,
-      default: true
-    }
-  }],
-  // Variation type (e.g., "Size", "Color", "Storage", etc.)
-  variationType: {
-    type: String,
-    trim: true
-  },
-  // Whether this product has variations
-  hasVariations: {
-    type: Boolean,
-    default: false
-  },
+      // Multi-attribute variations system
+      attributes: [{
+        name: {
+          type: String,
+          required: true,
+          trim: true
+        },
+        options: [{
+          name: {
+            type: String,
+            required: true,
+            trim: true
+          },
+          displayName: {
+            type: String,
+            trim: true
+          }
+        }]
+      }],
+      // All possible combinations of attributes
+      variants: [{
+        // Combination of attribute values (e.g., {Storage: "64GB", Color: "Black"})
+        combination: {
+          type: Map,
+          of: String,
+          required: true
+        },
+        price: {
+          type: Number,
+          required: true,
+          min: 0
+        },
+        discountedPrice: {
+          type: Number,
+          min: 0
+        },
+        stock: {
+          type: String,
+          enum: ['in_stock', 'out_of_stock'],
+          default: 'in_stock'
+        },
+        images: [{
+          type: String,
+          trim: true
+        }],
+        isActive: {
+          type: Boolean,
+          default: true
+        }
+      }],
+      // Whether this product has multi-attribute variations
+      hasVariations: {
+        type: Boolean,
+        default: false
+      },
   photo: {
     type: String,
     trim: true

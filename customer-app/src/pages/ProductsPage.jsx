@@ -12,7 +12,8 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [cartMessage, setCartMessage] = useState('')
   const [quantity, setQuantity] = useState(1)
-  const [selectedVariation, setSelectedVariation] = useState(null)
+  const [selectedVariant, setSelectedVariant] = useState(null)
+  const [selectedAttributes, setSelectedAttributes] = useState({})
 
   useEffect(() => {
     fetchProducts()
@@ -61,6 +62,46 @@ export default function ProductsPage() {
     return userData ? JSON.parse(userData) : null
   }
 
+  // Handle attribute selection for multi-attribute products
+  const handleAttributeSelection = (attributeName, optionName) => {
+    const newSelectedAttributes = {
+      ...selectedAttributes,
+      [attributeName]: optionName
+    }
+    setSelectedAttributes(newSelectedAttributes)
+    
+    // Find matching variant
+    if (selectedProduct && selectedProduct.variants) {
+      const matchingVariant = selectedProduct.variants.find(variant => {
+        return Object.entries(newSelectedAttributes).every(([attr, value]) => 
+          variant.combination.get && variant.combination.get(attr) === value
+        )
+      })
+      setSelectedVariant(matchingVariant || null)
+    }
+  }
+
+  // Initialize first variant when product is selected
+  useEffect(() => {
+    if (selectedProduct && selectedProduct.hasVariations && selectedProduct.variants && selectedProduct.variants.length > 0) {
+      // Select first variant by default
+      const firstVariant = selectedProduct.variants[0]
+      setSelectedVariant(firstVariant)
+      
+      // Set default attribute selections
+      const defaultAttributes = {}
+      if (firstVariant.combination) {
+        Object.entries(firstVariant.combination).forEach(([attr, value]) => {
+          defaultAttributes[attr] = value
+        })
+      }
+      setSelectedAttributes(defaultAttributes)
+    } else {
+      setSelectedVariant(null)
+      setSelectedAttributes({})
+    }
+  }, [selectedProduct])
+
   // Handle Add to Cart
   const handleAddToCart = async (product) => {
     try {
@@ -71,10 +112,10 @@ export default function ProductsPage() {
         return
       }
 
-      // Check if product has variations and a variation is selected
-      if (product.hasVariations && product.variations && product.variations.length > 0) {
-        if (!selectedVariation) {
-          setCartMessage('Please select a variation before adding to cart')
+      // Check if product has variations and a variant is selected
+      if (product.hasVariations && product.variants && product.variants.length > 0) {
+        if (!selectedVariant) {
+          setCartMessage('Please select a variant before adding to cart')
           setTimeout(() => setCartMessage(''), 3000)
           return
         }
@@ -99,14 +140,15 @@ export default function ProductsPage() {
         quantity: quantity
       };
 
-      // Add variation data if product has variations
-      if (product.hasVariations && selectedVariation) {
-        cartData.variation = {
-          name: selectedVariation.name,
-          price: selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price 
-            ? selectedVariation.discountedPrice 
-            : selectedVariation.price,
-          originalPrice: selectedVariation.price
+      // Add variant data if product has variations
+      if (product.hasVariations && selectedVariant) {
+        cartData.variant = {
+          combination: selectedVariant.combination,
+          price: selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price 
+            ? selectedVariant.discountedPrice 
+            : selectedVariant.price,
+          originalPrice: selectedVariant.price,
+          stock: selectedVariant.stock
         };
       }
 
@@ -124,7 +166,8 @@ export default function ProductsPage() {
         setCartMessage(`✅ ${quantity} item(s) added to cart successfully!`)
         setTimeout(() => setCartMessage(''), 3000)
         setQuantity(1) // Reset quantity after successful add
-        setSelectedVariation(null) // Reset selected variation
+        setSelectedVariant(null) // Reset selected variant
+        setSelectedAttributes({}) // Reset selected attributes
       } else {
         setCartMessage(`❌ ${data.error}`)
         setTimeout(() => setCartMessage(''), 3000)
@@ -349,8 +392,8 @@ export default function ProductsPage() {
                   {selectedProduct.name}
                 </h2>
                 
-                {/* Variation Selection */}
-                {selectedProduct.hasVariations && selectedProduct.variations && selectedProduct.variations.length > 0 ? (
+                {/* Multi-Attribute Selection */}
+                {selectedProduct.hasVariations && selectedProduct.attributes && selectedProduct.attributes.length > 0 ? (
                   <div style={{ marginBottom: '2rem' }}>
                     <h3 style={{ 
                       margin: '0 0 1rem 0', 
@@ -358,88 +401,96 @@ export default function ProductsPage() {
                       fontSize: '1.3rem',
                       fontWeight: '600'
                     }}>
-                      Select {selectedProduct.variationType}
+                      Select Options
                     </h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-                      {selectedProduct.variations.map((variation, index) => {
-                        const isSelected = selectedVariation && selectedVariation.name === variation.name;
-                        const isOutOfStock = variation.stock === 0;
-                        const displayPrice = variation.discountedPrice && variation.discountedPrice < variation.price 
-                          ? variation.discountedPrice 
-                          : variation.price;
-                        const hasDiscount = variation.discountedPrice && variation.discountedPrice < variation.price;
-                        
-                        return (
-                          <button
-                            key={index}
-                            onClick={() => !isOutOfStock && setSelectedVariation(variation)}
-                            disabled={isOutOfStock}
-                            style={{
-                              padding: '0.75rem 1rem',
-                              borderRadius: '8px',
-                              border: isSelected ? '2px solid #3b82f6' : '1px solid #d1d5db',
-                              background: isSelected ? '#eff6ff' : isOutOfStock ? '#f9fafb' : 'white',
-                              color: isOutOfStock ? '#9ca3af' : isSelected ? '#1d4ed8' : '#374151',
-                              cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.2s',
-                              opacity: isOutOfStock ? 0.6 : 1
-                            }}
-                          >
-                            <div style={{ textAlign: 'left' }}>
-                              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                                {variation.name}
-                              </div>
-                              <div style={{ fontSize: '0.9rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span style={{ fontWeight: '600' }}>${displayPrice}</span>
-                                  {hasDiscount && (
-                                    <span style={{ 
-                                      fontSize: '0.8rem', 
-                                      color: '#64748b', 
-                                      textDecoration: 'line-through' 
-                                    }}>
-                                      ${variation.price}
-                                    </span>
-                                  )}
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                  Stock: {variation.stock}
-                                </div>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
                     
-                    {selectedVariation && (
+                    {/* Attribute Selection */}
+                    {selectedProduct.attributes.map((attribute, attrIndex) => (
+                      <div key={attrIndex} style={{ marginBottom: '1.5rem' }}>
+                        <h4 style={{ 
+                          margin: '0 0 0.75rem 0', 
+                          color: '#374151', 
+                          fontSize: '1rem',
+                          fontWeight: '600'
+                        }}>
+                          {attribute.name}
+                        </h4>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          {attribute.options.map((option, optIndex) => {
+                            const isSelected = selectedAttributes[attribute.name] === option.name;
+                            
+                            return (
+                              <button
+                                key={optIndex}
+                                onClick={() => handleAttributeSelection(attribute.name, option.name)}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  borderRadius: '6px',
+                                  border: isSelected ? '2px solid #3b82f6' : '1px solid #d1d5db',
+                                  background: isSelected ? '#eff6ff' : 'white',
+                                  color: isSelected ? '#1d4ed8' : '#374151',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s',
+                                  fontSize: '0.9rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {option.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Selected Variant Display */}
+                    {selectedVariant && (
                       <div style={{ 
                         padding: '1rem', 
                         background: '#f0f9ff', 
                         borderRadius: '8px', 
                         border: '1px solid #bae6fd' 
                       }}>
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#0f172a' }}>
+                            Selected: {Object.entries(selectedVariant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                          </h4>
+                          {selectedVariant.stock === 'out_of_stock' && (
+                            <div style={{ 
+                              fontSize: '0.9rem', 
+                              color: '#dc2626', 
+                              fontWeight: '500',
+                              background: '#fef2f2',
+                              padding: '0.5rem 0.75rem',
+                              borderRadius: '4px',
+                              display: 'inline-block'
+                            }}>
+                              Out of Stock
+                            </div>
+                          )}
+                        </div>
+                        
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                           <span style={{ 
                             fontSize: '2rem', 
                             fontWeight: '700', 
-                            color: '#059669' 
+                            color: selectedVariant.stock === 'out_of_stock' ? '#9ca3af' : '#059669'
                           }}>
-                            ${selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price 
-                              ? selectedVariation.discountedPrice 
-                              : selectedVariation.price}
+                            ${selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price 
+                              ? selectedVariant.discountedPrice 
+                              : selectedVariant.price}
                           </span>
-                          {selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price && (
+                          {selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price && (
                             <span style={{ 
                               fontSize: '1.2rem', 
                               color: '#64748b', 
                               textDecoration: 'line-through' 
                             }}>
-                              ${selectedVariation.price}
+                              ${selectedVariant.price}
                             </span>
                           )}
                         </div>
-                        {selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price && (
+                        {selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price && (
                           <div style={{ 
                             fontSize: '1rem', 
                             color: '#dc2626', 
@@ -449,7 +500,7 @@ export default function ProductsPage() {
                             borderRadius: '6px',
                             display: 'inline-block'
                           }}>
-                            You Save: ${(selectedVariation.price - selectedVariation.discountedPrice).toFixed(2)}
+                            You Save: ${(selectedVariant.price - selectedVariant.discountedPrice).toFixed(2)}
                           </div>
                         )}
                       </div>
@@ -680,20 +731,27 @@ export default function ProductsPage() {
 }
 
 function ProductCard({ product, onClick }) {
-  // Handle pricing for products with variations
+  // Handle pricing for products with multi-attribute variations
   let displayPrice, hasDiscount, priceRange;
   
-  if (product.hasVariations && product.variations && product.variations.length > 0) {
-    const prices = product.variations.map(v => v.discountedPrice && v.discountedPrice < v.price ? v.discountedPrice : v.price);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+  if (product.hasVariations && product.variants && product.variants.length > 0) {
+    const prices = product.variants
+      .filter(v => v.stock === 'in_stock') // Only consider in-stock variants
+      .map(v => v.discountedPrice && v.discountedPrice < v.price ? v.discountedPrice : v.price);
     
-    if (minPrice === maxPrice) {
-      displayPrice = minPrice;
-      hasDiscount = false;
+    if (prices.length === 0) {
+      priceRange = "Out of Stock";
     } else {
-      priceRange = `$${minPrice} - $${maxPrice}`;
-      hasDiscount = false;
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      
+      if (minPrice === maxPrice) {
+        displayPrice = minPrice;
+        hasDiscount = false;
+      } else {
+        priceRange = `$${minPrice} - $${maxPrice}`;
+        hasDiscount = false;
+      }
     }
   } else {
     displayPrice = product.discountedPrice && product.discountedPrice < product.price 
@@ -746,15 +804,19 @@ function ProductCard({ product, onClick }) {
         {product.name}
       </h3>
 
-      {/* Show variation type if available */}
-      {product.hasVariations && product.variationType && (
+      {/* Show variations indicator */}
+      {product.hasVariations && product.attributes && product.attributes.length > 0 && (
         <div style={{ 
           fontSize: '0.8rem', 
-          color: '#64748b',
+          color: '#3b82f6',
           marginBottom: '0.5rem',
-          fontWeight: '500'
+          fontWeight: '500',
+          background: '#eff6ff',
+          padding: '0.25rem 0.5rem',
+          borderRadius: '4px',
+          display: 'inline-block'
         }}>
-          {product.variationType} available
+          Has Variations
         </div>
       )}
       

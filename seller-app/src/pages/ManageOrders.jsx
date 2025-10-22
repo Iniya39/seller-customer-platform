@@ -472,6 +472,22 @@ export default function ManageOrders() {
                         }}>
                           {item.product?.description || 'No description available'}
                         </div>
+                        
+                        {/* Show variant information if available */}
+                        {item.variant && item.variant.combination && (
+                          <div style={{ 
+                            margin: "0 0 0.75rem 0", 
+                            fontSize: "0.9rem", 
+                            color: "#3b82f6",
+                            fontWeight: "500",
+                            background: "#eff6ff",
+                            padding: "0.5rem 0.75rem",
+                            borderRadius: "6px",
+                            display: "inline-block"
+                          }}>
+                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                          </div>
+                        )}
                         <div style={{ 
                           display: "flex", 
                           justifyContent: "space-between", 

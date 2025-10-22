@@ -4,14 +4,14 @@ import Product from '../models/productModel.js';
 // Add item to cart
 export const addToCart = async (req, res) => {
   try {
-    const { userId, productId, quantity = 1 } = req.body;
+    const { userId, productId, quantity = 1, variant } = req.body;
 
     // Validate required fields
     if (!userId || !productId) {
       return res.status(400).json({ error: 'User ID and Product ID are required' });
     }
 
-    console.log('Cart request - userId:', userId, 'productId:', productId); // Debug log
+    console.log('Cart request - userId:', userId, 'productId:', productId, 'variation:', variation); // Debug log
 
     // Check if product exists
     const product = await Product.findById(productId);
@@ -19,8 +19,40 @@ export const addToCart = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    // Handle pricing and stock based on whether product has multi-attribute variations
+    let itemPrice, itemDiscountedPrice, availableStock;
+    
+    if (product.hasVariations && product.variants && product.variants.length > 0) {
+      // Product has multi-attribute variations
+      if (!variant || !variant.combination) {
+        return res.status(400).json({ error: 'Variant selection is required for this product' });
+      }
+      
+      // Find the specific variant by matching combination
+      const selectedVariant = product.variants.find(v => {
+        return Object.entries(variant.combination).every(([key, value]) => 
+          v.combination.get && v.combination.get(key) === value
+        );
+      });
+      
+      if (!selectedVariant) {
+        return res.status(400).json({ error: 'Selected variant not found' });
+      }
+      
+      itemPrice = variant.price || selectedVariant.price;
+      itemDiscountedPrice = variant.originalPrice && variant.price < variant.originalPrice 
+        ? variant.price 
+        : selectedVariant.discountedPrice;
+      availableStock = selectedVariant.stock === 'in_stock' ? 999 : 0; // Convert to numeric for stock check
+    } else {
+      // Product without variations
+      itemPrice = product.price;
+      itemDiscountedPrice = product.discountedPrice;
+      availableStock = product.stock;
+    }
+
     // Check stock availability
-    if (product.stock < quantity) {
+    if (availableStock < quantity) {
       return res.status(400).json({ error: 'Insufficient stock available' });
     }
 
@@ -31,27 +63,43 @@ export const addToCart = async (req, res) => {
       cart = new Cart({ user: userId, items: [] });
     }
 
-    // Check if product already exists in cart
-    const existingItemIndex = cart.items.findIndex(
-      item => item.product.toString() === productId
-    );
+    // Check if product already exists in cart (with same variant if applicable)
+    const existingItemIndex = cart.items.findIndex(item => {
+      const sameProduct = item.product.toString() === productId;
+      const sameVariant = variant 
+        ? (item.variant && JSON.stringify(item.variant.combination) === JSON.stringify(variant.combination))
+        : (!item.variant || !item.variant.combination);
+      return sameProduct && sameVariant;
+    });
 
     if (existingItemIndex > -1) {
       // Update quantity if item already exists
       cart.items[existingItemIndex].quantity += quantity;
       
       // Check stock again after adding quantity
-      if (product.stock < cart.items[existingItemIndex].quantity) {
+      if (availableStock < cart.items[existingItemIndex].quantity) {
         return res.status(400).json({ error: 'Insufficient stock available' });
       }
     } else {
       // Add new item to cart
-      cart.items.push({
+      const newItem = {
         product: productId,
         quantity: quantity,
-        price: product.price,
-        discountedPrice: product.discountedPrice
-      });
+        price: itemPrice,
+        discountedPrice: itemDiscountedPrice
+      };
+      
+      // Add variant info if applicable
+      if (variant && variant.combination) {
+        newItem.variant = {
+          combination: variant.combination,
+          price: itemPrice,
+          originalPrice: variant.originalPrice || itemPrice,
+          stock: variant.stock || 'in_stock'
+        };
+      }
+      
+      cart.items.push(newItem);
     }
 
     await cart.save();

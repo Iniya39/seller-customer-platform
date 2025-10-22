@@ -16,8 +16,8 @@ export const createProduct = async (req, res) => {
       sellerName, 
       sellerEmail,
       hasVariations,
-      variationType,
-      variations
+      attributes,
+      variants
     } = req.body;
 
     // Validate required fields
@@ -43,28 +43,56 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Parse variations if provided
-    let parsedVariations = [];
-    if (hasVariations === 'true' && variations) {
+    // Parse multi-attribute data if provided
+    let parsedAttributes = [];
+    let parsedVariants = [];
+    if (hasVariations === 'true' && attributes && variants) {
       try {
-        parsedVariations = JSON.parse(variations);
-        if (!Array.isArray(parsedVariations) || parsedVariations.length === 0) {
+        parsedAttributes = JSON.parse(attributes);
+        parsedVariants = JSON.parse(variants);
+        
+        if (!Array.isArray(parsedAttributes) || parsedAttributes.length === 0) {
           return res.status(400).json({ 
-            error: 'Variations must be a non-empty array when hasVariations is true' 
+            error: 'Attributes must be a non-empty array when hasVariations is true' 
           });
         }
-        // Validate each variation
-        for (let i = 0; i < parsedVariations.length; i++) {
-          const variation = parsedVariations[i];
-          if (!variation.name || !variation.price || variation.stock === undefined) {
+        
+        if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+          return res.status(400).json({ 
+            error: 'Variants must be a non-empty array when hasVariations is true' 
+          });
+        }
+        
+        // Validate attributes
+        for (let i = 0; i < parsedAttributes.length; i++) {
+          const attr = parsedAttributes[i];
+          if (!attr.name || !attr.options || attr.options.length === 0) {
             return res.status(400).json({ 
-              error: `Variation ${i + 1} is missing required fields: name, price, and stock are required` 
+              error: `Attribute ${i + 1} is missing required fields: name and options are required` 
+            });
+          }
+          for (let j = 0; j < attr.options.length; j++) {
+            const option = attr.options[j];
+            if (!option.name) {
+              return res.status(400).json({ 
+                error: `Option ${j + 1} in attribute "${attr.name}" is missing name` 
+              });
+            }
+          }
+        }
+        
+        // Validate variants
+        for (let i = 0; i < parsedVariants.length; i++) {
+          const variant = parsedVariants[i];
+          if (!variant.combination || !variant.price || !variant.stock) {
+            return res.status(400).json({ 
+              error: `Variant ${i + 1} is missing required fields: combination, price, and stock are required` 
             });
           }
         }
       } catch (error) {
         return res.status(400).json({ 
-          error: 'Invalid variations format. Must be valid JSON array.' 
+          error: 'Invalid attributes or variants format. Must be valid JSON arrays.' 
         });
       }
     }
@@ -88,8 +116,8 @@ export const createProduct = async (req, res) => {
       sellerName,
       sellerEmail,
       hasVariations: hasVariations === 'true',
-      variationType: variationType || '',
-      variations: parsedVariations
+      attributes: parsedAttributes,
+      variants: parsedVariants
     };
 
     // Add base price/stock only if no variations

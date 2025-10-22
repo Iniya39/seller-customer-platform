@@ -354,6 +354,23 @@ export default function CartPage() {
                         <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b' }}>
                           {product.description}
                         </p>
+                        
+                        {/* Show variant information if available */}
+                        {item.variant && item.variant.combination && (
+                          <div style={{ 
+                            margin: '0 0 0.5rem 0', 
+                            fontSize: '0.9rem', 
+                            color: '#3b82f6',
+                            fontWeight: '500',
+                            background: '#eff6ff',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            display: 'inline-block'
+                          }}>
+                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                          </div>
+                        )}
+                        
                         <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
                           Product ID: {product.productId}
                         </div>

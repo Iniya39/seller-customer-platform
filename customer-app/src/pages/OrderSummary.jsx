@@ -309,6 +309,23 @@ export default function OrderSummary() {
                         <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b', lineHeight: '1.4' }}>
                           {product.description}
                         </p>
+                        
+                        {/* Show variant information if available */}
+                        {item.variant && item.variant.combination && (
+                          <div style={{ 
+                            margin: "0 0 0.5rem 0", 
+                            fontSize: "0.9rem", 
+                            color: "#3b82f6",
+                            fontWeight: "500",
+                            background: "#eff6ff",
+                            padding: "0.5rem 0.75rem",
+                            borderRadius: "6px",
+                            display: "inline-block"
+                          }}>
+                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                          </div>
+                        )}
+                        
                         <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
                           Category: <span style={{ fontWeight: '500', color: '#0f172a' }}>{product.category}</span>
                         </div>
