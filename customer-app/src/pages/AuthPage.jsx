@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 export default function AuthPage() {
-  const [mode, setMode] = useState('signin') // 'signin' | 'signup'
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -25,10 +24,10 @@ export default function AuthPage() {
         boxShadow: '0 10px 30px rgba(0,0,0,0.35)'
       }}>
         <h1 style={{ margin: 0, marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: 700 }}>
-          {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+          Access Store App
         </h1>
         <p style={{ marginTop: 0, marginBottom: '1.5rem', color: '#cbd5e1' }}>
-          {mode === 'signin' ? 'Sign in to continue' : 'Sign up to get started'}
+          Enter your details to access the store
         </p>
 
         <form
@@ -38,35 +37,45 @@ export default function AuthPage() {
             setLoading(true)
             try {
               const form = new FormData(e.currentTarget)
-              const email = form.get('email')
-              const password = form.get('password')
+              const phone = form.get('phone')
               const name = form.get('name')
-              const uniqueCode = form.get('uniqueCode')
 
-              if (mode === 'signup') {
-                const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name, email, password, uniqueCode })
-                })
-                const data = await res.json()
-                if (!res.ok) throw new Error(data.error || 'Signup failed')
-                // After successful signup, allow entry
-                localStorage.setItem('user', JSON.stringify(data))
-                window.location.href = '/dashboard'
-              } else {
-                // Sign in: allow email-only for customers if no password provided, include name
-                const body = password ? { email, password, name } : { email, name }
-                const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/login`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(body)
-                })
-                const data = await res.json()
-                if (!res.ok) throw new Error(data.error || 'Sign in failed')
-                localStorage.setItem('user', JSON.stringify(data))
-                window.location.href = '/dashboard'
+              // Check if phone number is permitted by seller
+              const checkRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/customers/check`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+              })
+              const checkData = await checkRes.json()
+              
+              if (!checkRes.ok) {
+                throw new Error('Your phone number is not registered. Please contact the store owner to get access.')
               }
+
+              // Check if it's been more than 3 months since last login
+              const lastLogin = localStorage.getItem('lastLogin')
+              if (lastLogin) {
+                const lastLoginDate = new Date(lastLogin)
+                const threeMonthsAgo = new Date()
+                threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+                
+                if (lastLoginDate < threeMonthsAgo) {
+                  throw new Error('Your session has expired. Please contact the store owner to renew your access.')
+                }
+              }
+
+              // Access the app (same as login/signup)
+              const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/customers/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, name })
+              })
+              const data = await res.json()
+              if (!res.ok) throw new Error(data.error || 'Access failed')
+              
+              localStorage.setItem('user', JSON.stringify(data))
+              localStorage.setItem('lastLogin', new Date().toISOString())
+              window.location.href = '/dashboard'
             } catch (err) {
               setError(err.message)
             } finally {
@@ -81,65 +90,51 @@ export default function AuthPage() {
               name="name"
               type="text"
               required
-              placeholder="Jane Doe"
+              placeholder="Enter your name"
               style={inputStyle}
             />
           </div>
 
-          {mode === 'signup' && (
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', color: '#cbd5e1' }}>Unique Code</label>
-              <input
-                name="uniqueCode"
-                type="text"
-                required
-                placeholder="Enter unique code"
-                style={inputStyle}
-              />
-            </div>
-          )}
-
           <div>
-            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#cbd5e1' }}>Email</label>
+            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#cbd5e1' }}>Phone Number</label>
             <input
-              name="email"
-              type="email"
+              name="phone"
+              type="tel"
               required
-              placeholder="you@example.com"
-              style={inputStyle}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#cbd5e1' }}>Password</label>
-            <input
-              name="password"
-              type="password"
-              required={mode === 'signup'}
-              placeholder={mode === 'signin' ? 'Your password' : 'Create a strong password'}
+              placeholder="Enter your phone number"
               style={inputStyle}
             />
           </div>
 
           {error && (
-            <div style={{ color: '#fca5a5', fontSize: '0.95rem' }}>{error}</div>
+            <div style={{ 
+              color: '#fca5a5', 
+              fontSize: '0.95rem',
+              padding: '0.75rem',
+              backgroundColor: 'rgba(252, 165, 165, 0.1)',
+              borderRadius: '8px',
+              border: '1px solid rgba(252, 165, 165, 0.2)'
+            }}>
+              {error}
+            </div>
           )}
 
           <button type="submit" style={primaryButtonStyle}>
-            {loading ? (mode === 'signin' ? 'Signing in...' : 'Creating...') : (mode === 'signin' ? 'Sign In' : 'Create Account')}
+            {loading ? 'Accessing...' : 'Access Store'}
           </button>
         </form>
 
-        <div style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#cbd5e1' }}>
-          {mode === 'signin' ? (
-            <>Don't have an account?{' '}
-              <button onClick={() => setMode('signup')} style={linkButtonStyle}>Sign Up</button>
-            </>
-          ) : (
-            <>Already have an account?{' '}
-              <button onClick={() => setMode('signin')} style={linkButtonStyle}>Sign In</button>
-            </>
-          )}
+        <div style={{ 
+          marginTop: '1.5rem', 
+          padding: '1rem', 
+          backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+          borderRadius: '8px',
+          border: '1px solid rgba(59, 130, 246, 0.2)'
+        }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: '#93c5fd' }}>
+            <strong>Note:</strong> Only phone numbers registered by the store owner can access this app. 
+            If you can't access, please contact the store owner to get access.
+          </p>
         </div>
       </div>
     </div>

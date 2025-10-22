@@ -24,20 +24,57 @@ const productSchema = new mongoose.Schema({
     required: true,
     enum: ['Electronics', 'Clothing', 'Books', 'Furniture']
   },
+  // Base price (for products without variations)
   price: {
     type: Number,
-    required: true,
     min: 0
   },
   discountedPrice: {
     type: Number,
     min: 0
   },
+  // Stock (for products without variations)
   stock: {
     type: Number,
-    required: true,
     min: 0,
     default: 0
+  },
+  // Product variations (for products with different sizes, colors, etc.)
+  variations: [{
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    discountedPrice: {
+      type: Number,
+      min: 0
+    },
+    stock: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    }
+  }],
+  // Variation type (e.g., "Size", "Color", "Storage", etc.)
+  variationType: {
+    type: String,
+    trim: true
+  },
+  // Whether this product has variations
+  hasVariations: {
+    type: Boolean,
+    default: false
   },
   photo: {
     type: String,

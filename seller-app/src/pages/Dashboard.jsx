@@ -154,6 +154,24 @@ export default function Dashboard({ user }) {
             >
               Order Management
             </button>
+            <button 
+              onClick={() => navigate("/customer-management")}
+              style={{
+                padding: "1rem 2rem",
+                borderRadius: "8px",
+                fontSize: "1.1rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                backgroundColor: "#22c55e",
+                color: "white",
+                border: "none"
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = "#16a34a"}
+              onMouseOut={(e) => e.target.style.backgroundColor = "#22c55e"}
+            >
+              Customer Management
+            </button>
           </div>
         )}
 

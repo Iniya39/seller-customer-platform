@@ -305,26 +305,126 @@ export default function ManageOrders() {
               Order Details - {selectedOrder.orderId}
             </h2>
 
+            {/* Order Information */}
+            <div style={{ marginBottom: "2rem" }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Information</h3>
+              <div style={{ 
+                padding: "1.5rem", 
+                background: "#f8fafc", 
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0"
+              }}>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
+                  gap: "2rem",
+                  alignItems: "start"
+                }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "120px", color: "#374151" }}>Order Date:</span>
+                      <span style={{ color: "#6b7280" }}>
+                        {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "120px", color: "#374151" }}>Order Time:</span>
+                      <span style={{ color: "#6b7280" }}>
+                        {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleTimeString() : 'N/A'}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "120px", color: "#374151" }}>Order Status:</span>
+                      <span style={{
+                        padding: "0.25rem 0.75rem",
+                        borderRadius: "12px",
+                        backgroundColor: getStatusColor(selectedOrder.status),
+                        color: "white",
+                        fontSize: "0.8rem",
+                        fontWeight: "500"
+                      }}>
+                        {selectedOrder.status?.charAt(0).toUpperCase() + selectedOrder.status?.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "120px", color: "#374151" }}>Delivery Status:</span>
+                      <span style={{
+                        padding: "0.25rem 0.75rem",
+                        borderRadius: "12px",
+                        backgroundColor: getDeliveryStatusColor(selectedOrder.deliveryStatus),
+                        color: "white",
+                        fontSize: "0.8rem",
+                        fontWeight: "500"
+                      }}>
+                        {selectedOrder.deliveryStatus?.replace('_', ' ').charAt(0).toUpperCase() + selectedOrder.deliveryStatus?.replace('_', ' ').slice(1)}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "120px", color: "#374151" }}>Payment Method:</span>
+                      <span style={{ color: "#6b7280" }}>
+                        {selectedOrder.paymentMethod || 'Credit Card'}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "120px", color: "#374151" }}>Payment Status:</span>
+                      <span style={{
+                        padding: "0.25rem 0.75rem",
+                        borderRadius: "12px",
+                        backgroundColor: selectedOrder.paymentStatus === 'paid' ? "#22c55e" : "#ef4444",
+                        color: "white",
+                        fontSize: "0.8rem",
+                        fontWeight: "500"
+                      }}>
+                        {selectedOrder.paymentStatus?.charAt(0).toUpperCase() + selectedOrder.paymentStatus?.slice(1) || 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Customer Information */}
             <div style={{ marginBottom: "2rem" }}>
               <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Customer Information</h3>
               <div style={{ 
-                padding: "1rem", 
+                padding: "1.5rem", 
                 background: "#f8fafc", 
-                borderRadius: "8px",
+                borderRadius: "12px",
                 border: "1px solid #e2e8f0"
               }}>
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <strong>Name:</strong> {selectedOrder.customerDetails?.name}
-                </div>
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <strong>Email:</strong> {selectedOrder.customerDetails?.email}
-                </div>
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <strong>Phone:</strong> {selectedOrder.customerDetails?.phone}
-                </div>
-                <div>
-                  <strong>Address:</strong> {selectedOrder.customerDetails?.address?.street}, {selectedOrder.customerDetails?.address?.city}, {selectedOrder.customerDetails?.address?.state} - {selectedOrder.customerDetails?.address?.pincode}
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
+                  gap: "1.5rem",
+                  alignItems: "start"
+                }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "80px", color: "#374151" }}>Name:</span>
+                      <span style={{ color: "#6b7280" }}>{selectedOrder.customerDetails?.name || 'N/A'}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "80px", color: "#374151" }}>Email:</span>
+                      <span style={{ color: "#6b7280" }}>{selectedOrder.customerDetails?.email || 'N/A'}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "80px", color: "#374151" }}>Phone:</span>
+                      <span style={{ color: "#6b7280" }}>{selectedOrder.customerDetails?.phone || 'N/A'}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                      <span style={{ fontWeight: "600", minWidth: "80px", color: "#374151", marginTop: "0.125rem" }}>Address:</span>
+                      <span style={{ color: "#6b7280", lineHeight: "1.4" }}>
+                        {selectedOrder.customerDetails?.address ? 
+                          `${selectedOrder.customerDetails.address.street || ''}, ${selectedOrder.customerDetails.address.city || ''}, ${selectedOrder.customerDetails.address.state || ''} - ${selectedOrder.customerDetails.address.pincode || ''}`.replace(/^,\s*|,\s*$/g, '') :
+                          'N/A'
+                        }
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -332,31 +432,69 @@ export default function ManageOrders() {
             {/* Order Items */}
             <div style={{ marginBottom: "2rem" }}>
               <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Items</h3>
-              <div style={{ display: "grid", gap: "1rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {selectedOrder.items?.map((item, index) => (
                   <div key={index} style={{
-                    padding: "1rem",
+                    padding: "1.5rem",
                     border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
-                    background: "#fafafa"
+                    borderRadius: "12px",
+                    background: "#ffffff",
+                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)"
                   }}>
-                    <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
                       {item.product?.photo && (
                         <img 
                           src={item.product.photo} 
                           alt={item.product.name}
-                          style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "6px" }}
+                          style={{ 
+                            width: "80px", 
+                            height: "80px", 
+                            objectFit: "cover", 
+                            borderRadius: "8px",
+                            flexShrink: 0
+                          }} 
                         />
                       )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: "600", marginBottom: "0.25rem" }}>
-                          {item.product?.name}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ 
+                          fontWeight: "600", 
+                          marginBottom: "0.5rem", 
+                          fontSize: "1rem",
+                          color: "#111827"
+                        }}>
+                          {item.product?.name || 'Product Name'}
                         </div>
-                        <div style={{ fontSize: "0.9rem", color: "#64748b", marginBottom: "0.25rem" }}>
-                          {item.product?.description}
+                        <div style={{ 
+                          fontSize: "0.9rem", 
+                          color: "#6b7280", 
+                          marginBottom: "0.75rem",
+                          lineHeight: "1.4"
+                        }}>
+                          {item.product?.description || 'No description available'}
                         </div>
-                        <div style={{ fontSize: "0.9rem" }}>
-                          Quantity: {item.quantity} × ${item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price} = ${((item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price) * item.quantity).toFixed(2)}
+                        <div style={{ 
+                          display: "flex", 
+                          justifyContent: "space-between", 
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: "0.5rem"
+                        }}>
+                          <div style={{ fontSize: "0.9rem", color: "#374151" }}>
+                            <span style={{ fontWeight: "500" }}>Quantity:</span> {item.quantity}
+                          </div>
+                          <div style={{ fontSize: "0.9rem", color: "#374151" }}>
+                            <span style={{ fontWeight: "500" }}>Unit Price:</span> ${item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price}
+                          </div>
+                          <div style={{ 
+                            fontSize: "1rem", 
+                            fontWeight: "600", 
+                            color: "#111827",
+                            backgroundColor: "#f3f4f6",
+                            padding: "0.25rem 0.75rem",
+                            borderRadius: "6px"
+                          }}>
+                            Total: ${((item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price) * item.quantity).toFixed(2)}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -369,23 +507,291 @@ export default function ManageOrders() {
             <div style={{ marginBottom: "2rem" }}>
               <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Summary</h3>
               <div style={{ 
+                padding: "1.5rem", 
+                background: "#f8fafc", 
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0"
+              }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center",
+                    padding: "0.5rem 0"
+                  }}>
+                    <span style={{ color: "#374151", fontSize: "0.95rem" }}>Subtotal:</span>
+                    <span style={{ color: "#374151", fontWeight: "500" }}>${selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
+                  </div>
+                  <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center",
+                    padding: "0.5rem 0"
+                  }}>
+                    <span style={{ color: "#374151", fontSize: "0.95rem" }}>Shipping:</span>
+                    <span style={{ color: "#059669", fontWeight: "600" }}>Free</span>
+                  </div>
+                  <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center",
+                    padding: "0.5rem 0"
+                  }}>
+                    <span style={{ color: "#374151", fontSize: "0.95rem" }}>Tax:</span>
+                    <span style={{ color: "#374151", fontWeight: "500" }}>$0.00</span>
+                  </div>
+                  <hr style={{ 
+                    border: "none", 
+                    borderTop: "2px solid #e5e7eb", 
+                    margin: "0.5rem 0" 
+                  }} />
+                  <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center",
+                    padding: "0.75rem 0",
+                    backgroundColor: "#f3f4f6",
+                    borderRadius: "8px",
+                    padding: "1rem",
+                    marginTop: "0.5rem"
+                  }}>
+                    <span style={{ fontSize: "1.1rem", fontWeight: "700", color: "#111827" }}>Total:</span>
+                    <span style={{ fontSize: "1.2rem", fontWeight: "700", color: "#111827" }}>${selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Order Status History */}
+            <div style={{ marginBottom: "2rem" }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Timeline</h3>
+              <div style={{ 
+                padding: "1.5rem", 
+                background: "#f8fafc", 
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0"
+              }}>
+                <div style={{ 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  gap: "1rem",
+                  position: "relative"
+                }}>
+                  {/* Timeline line */}
+                  <div style={{
+                    position: "absolute",
+                    left: "6px",
+                    top: "12px",
+                    bottom: "12px",
+                    width: "2px",
+                    backgroundColor: "#e5e7eb",
+                    zIndex: 1
+                  }}></div>
+                  
+                  {/* Order Placed */}
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: "1rem",
+                    position: "relative",
+                    zIndex: 2
+                  }}>
+                    <div style={{
+                      width: "14px",
+                      height: "14px",
+                      borderRadius: "50%",
+                      backgroundColor: "#22c55e",
+                      flexShrink: 0,
+                      border: "3px solid #ffffff",
+                      boxShadow: "0 0 0 2px #e5e7eb"
+                    }}></div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: "600", color: "#111827", marginBottom: "0.25rem" }}>
+                        Order Placed
+                      </div>
+                      <div style={{ fontSize: "0.9rem", color: "#6b7280" }}>
+                        {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Order Accepted */}
+                  {selectedOrder.status !== 'pending' && (
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "1rem",
+                      position: "relative",
+                      zIndex: 2
+                    }}>
+                      <div style={{
+                        width: "14px",
+                        height: "14px",
+                        borderRadius: "50%",
+                        backgroundColor: "#22c55e",
+                        flexShrink: 0,
+                        border: "3px solid #ffffff",
+                        boxShadow: "0 0 0 2px #e5e7eb"
+                      }}></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: "600", color: "#111827", marginBottom: "0.25rem" }}>
+                          Order Accepted
+                        </div>
+                        <div style={{ fontSize: "0.9rem", color: "#6b7280" }}>
+                          {selectedOrder.acceptedAt ? new Date(selectedOrder.acceptedAt).toLocaleString() : 'Recently'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Shipped */}
+                  {(selectedOrder.status === 'shipped' || selectedOrder.deliveryStatus === 'shipped' || selectedOrder.deliveryStatus === 'out_for_delivery' || selectedOrder.deliveryStatus === 'delivered') && (
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "1rem",
+                      position: "relative",
+                      zIndex: 2
+                    }}>
+                      <div style={{
+                        width: "14px",
+                        height: "14px",
+                        borderRadius: "50%",
+                        backgroundColor: "#22c55e",
+                        flexShrink: 0,
+                        border: "3px solid #ffffff",
+                        boxShadow: "0 0 0 2px #e5e7eb"
+                      }}></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: "600", color: "#111827", marginBottom: "0.25rem" }}>
+                          Order Shipped
+                        </div>
+                        <div style={{ fontSize: "0.9rem", color: "#6b7280" }}>
+                          {selectedOrder.shippedAt ? new Date(selectedOrder.shippedAt).toLocaleString() : 'Recently'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Out for Delivery */}
+                  {(selectedOrder.deliveryStatus === 'out_for_delivery' || selectedOrder.deliveryStatus === 'delivered') && (
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "1rem",
+                      position: "relative",
+                      zIndex: 2
+                    }}>
+                      <div style={{
+                        width: "14px",
+                        height: "14px",
+                        borderRadius: "50%",
+                        backgroundColor: "#22c55e",
+                        flexShrink: 0,
+                        border: "3px solid #ffffff",
+                        boxShadow: "0 0 0 2px #e5e7eb"
+                      }}></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: "600", color: "#111827", marginBottom: "0.25rem" }}>
+                          Out for Delivery
+                        </div>
+                        <div style={{ fontSize: "0.9rem", color: "#6b7280" }}>
+                          {selectedOrder.outForDeliveryAt ? new Date(selectedOrder.outForDeliveryAt).toLocaleString() : 'Recently'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Delivered */}
+                  {selectedOrder.deliveryStatus === 'delivered' && (
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "1rem",
+                      position: "relative",
+                      zIndex: 2
+                    }}>
+                      <div style={{
+                        width: "14px",
+                        height: "14px",
+                        borderRadius: "50%",
+                        backgroundColor: "#22c55e",
+                        flexShrink: 0,
+                        border: "3px solid #ffffff",
+                        boxShadow: "0 0 0 2px #e5e7eb"
+                      }}></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: "600", color: "#111827", marginBottom: "0.25rem" }}>
+                          Delivered
+                        </div>
+                        <div style={{ fontSize: "0.9rem", color: "#6b7280" }}>
+                          {selectedOrder.deliveredAt ? new Date(selectedOrder.deliveredAt).toLocaleString() : 'Recently'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Cancelled */}
+                  {selectedOrder.status === 'cancelled' && (
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "1rem",
+                      position: "relative",
+                      zIndex: 2
+                    }}>
+                      <div style={{
+                        width: "14px",
+                        height: "14px",
+                        borderRadius: "50%",
+                        backgroundColor: "#ef4444",
+                        flexShrink: 0,
+                        border: "3px solid #ffffff",
+                        boxShadow: "0 0 0 2px #e5e7eb"
+                      }}></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: "600", color: "#111827", marginBottom: "0.25rem" }}>
+                          Order Cancelled
+                        </div>
+                        <div style={{ fontSize: "0.9rem", color: "#6b7280" }}>
+                          {selectedOrder.cancelledAt ? new Date(selectedOrder.cancelledAt).toLocaleString() : 'Recently'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Order Notes */}
+            <div style={{ marginBottom: "2rem" }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Notes</h3>
+              <div style={{ 
                 padding: "1rem", 
                 background: "#f8fafc", 
                 borderRadius: "8px",
                 border: "1px solid #e2e8f0"
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                  <span>Subtotal:</span>
-                  <span>${selectedOrder.totalAmount?.toFixed(2)}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                  <span>Shipping:</span>
-                  <span style={{ color: "#059669", fontWeight: "600" }}>Free</span>
-                </div>
-                <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "0.5rem 0" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.1rem", fontWeight: "600" }}>
-                  <span>Total:</span>
-                  <span>${selectedOrder.totalAmount?.toFixed(2)}</span>
+                <textarea
+                  placeholder="Add internal notes about this order (visible only to sellers)..."
+                  style={{
+                    width: "100%",
+                    minHeight: "80px",
+                    padding: "0.75rem",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "0.9rem",
+                    resize: "vertical",
+                    fontFamily: "inherit"
+                  }}
+                  defaultValue={selectedOrder.sellerNotes || ''}
+                  onChange={(e) => {
+                    // You can add functionality to save notes here
+                    console.log('Order notes updated:', e.target.value);
+                  }}
+                />
+                <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "0.5rem" }}>
+                  These notes are for internal use only and won't be visible to customers.
                 </div>
               </div>
             </div>
@@ -395,19 +801,50 @@ export default function ManageOrders() {
               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600" }}>
                 Tracking Number (Optional)
               </label>
-              <input
-                type="text"
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                placeholder="Enter tracking number"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  borderRadius: "8px",
-                  border: "1px solid #d1d5db",
-                  fontSize: "1rem"
-                }}
-              />
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <input
+                  type="text"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  placeholder="Enter tracking number"
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "1rem"
+                  }}
+                />
+                {trackingNumber && (
+                  <button
+                    onClick={() => {
+                      // Add functionality to save tracking number
+                      console.log('Tracking number saved:', trackingNumber);
+                      alert('Tracking number saved successfully!');
+                    }}
+                    style={{
+                      padding: "0.75rem 1rem",
+                      borderRadius: "8px",
+                      fontSize: "0.9rem",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      backgroundColor: "#3b82f6",
+                      color: "white",
+                      border: "none",
+                      transition: "all 0.3s ease"
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = "#2563eb"}
+                    onMouseOut={(e) => e.target.style.backgroundColor = "#3b82f6"}
+                  >
+                    Save
+                  </button>
+                )}
+              </div>
+              {selectedOrder.trackingNumber && (
+                <div style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "#059669" }}>
+                  <strong>Current Tracking:</strong> {selectedOrder.trackingNumber}
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

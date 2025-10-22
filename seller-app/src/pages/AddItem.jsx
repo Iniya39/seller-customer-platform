@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function AddItem({ user }) {
+  console.log('AddItem component rendered with user:', user); // Debug log
+  
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [productData, setProductData] = useState({
     productId: "",
@@ -16,8 +18,12 @@ export default function AddItem({ user }) {
     seller: user?._id || user?.id || "",
     sellerName: user?.name || "",
     sellerEmail: user?.email || "",
-    userId: user?._id || user?.id || ""
+    userId: user?._id || user?.id || "",
+    hasVariations: false,
+    variationType: "",
+    variations: []
   });
+  const [variations, setVariations] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -73,12 +79,66 @@ export default function AddItem({ user }) {
   };
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'photoFile') {
-      setProductData(prev => ({ ...prev, photoFile: files && files[0] ? files[0] : null }));
-      return;
+    try {
+      const { name, value, files } = e.target;
+      if (name === 'photoFile') {
+        setProductData(prev => ({ ...prev, photoFile: files && files[0] ? files[0] : null }));
+        return;
+      }
+      if (name === 'hasVariations') {
+        const boolValue = value === 'true' || value === true;
+        console.log('hasVariations changed to:', boolValue); // Debug log
+        setProductData(prev => ({ 
+          ...prev, 
+          [name]: boolValue,
+          variations: boolValue ? [] : []
+        }));
+        setVariations([]);
+        return;
+      }
+      setProductData(prev => ({ ...prev, [name]: value }));
+    } catch (error) {
+      console.error('Error in handleChange:', error);
+      alert('An error occurred while updating the form. Please try again.');
     }
-    setProductData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addVariation = () => {
+    try {
+      const newVariation = {
+        name: "",
+        price: 0,
+        discountedPrice: 0,
+        stock: 0,
+        isActive: true
+      };
+      setVariations([...variations, newVariation]);
+    } catch (error) {
+      console.error('Error adding variation:', error);
+      alert('An error occurred while adding variation. Please try again.');
+    }
+  };
+
+  const updateVariation = (index, field, value) => {
+    try {
+      const updatedVariations = variations.map((variation, i) => 
+        i === index ? { ...variation, [field]: value } : variation
+      );
+      setVariations(updatedVariations);
+    } catch (error) {
+      console.error('Error updating variation:', error);
+      alert('An error occurred while updating variation. Please try again.');
+    }
+  };
+
+  const removeVariation = (index) => {
+    try {
+      const updatedVariations = variations.filter((_, i) => i !== index);
+      setVariations(updatedVariations);
+    } catch (error) {
+      console.error('Error removing variation:', error);
+      alert('An error occurred while removing variation. Please try again.');
+    }
   };
 
   const handleSave = async () => {
@@ -87,12 +147,42 @@ export default function AddItem({ user }) {
       return;
     }
 
+    // Validate variations if hasVariations is true
+    if (productData.hasVariations) {
+      if (!productData.variationType) {
+        alert("Please specify the variation type (e.g., Size, Color, Storage)");
+        return;
+      }
+      if (variations.length === 0) {
+        alert("Please add at least one variation");
+        return;
+      }
+      for (let i = 0; i < variations.length; i++) {
+        const variation = variations[i];
+        if (!variation.name || variation.price <= 0 || variation.stock < 0) {
+          alert(`Please fill in all required fields for variation ${i + 1}`);
+          return;
+        }
+      }
+    } else {
+      // For products without variations, validate base price and stock
+      if (productData.price <= 0) {
+        alert("Please enter a valid price");
+        return;
+      }
+      if (productData.stock < 0) {
+        alert("Please enter a valid stock quantity");
+        return;
+      }
+    }
+
     // Ensure seller ID is included - user object from login contains _id
     const productToSave = {
       ...productData,
       seller: user?._id || user?.id || user?.seller,
       sellerName: user?.name || "",
-      sellerEmail: user?.email || ""
+      sellerEmail: user?.email || "",
+      variations: productData.hasVariations ? variations : []
     };
 
     // If no valid seller ID, show error
@@ -111,11 +201,19 @@ export default function AddItem({ user }) {
       formData.append('name', productToSave.name);
       formData.append('description', productToSave.description);
       formData.append('category', productToSave.category);
-      formData.append('price', productToSave.price);
-      if (productToSave.discountedPrice !== undefined && productToSave.discountedPrice !== null) {
-        formData.append('discountedPrice', productToSave.discountedPrice);
+      formData.append('hasVariations', productToSave.hasVariations);
+      formData.append('variationType', productToSave.variationType || '');
+      formData.append('variations', JSON.stringify(productToSave.variations));
+      
+      // Only add base price/stock if no variations
+      if (!productToSave.hasVariations) {
+        formData.append('price', productToSave.price);
+        if (productToSave.discountedPrice !== undefined && productToSave.discountedPrice !== null) {
+          formData.append('discountedPrice', productToSave.discountedPrice);
+        }
+        formData.append('stock', productToSave.stock);
       }
-      formData.append('stock', productToSave.stock);
+      
       formData.append('seller', productToSave.seller);
       formData.append('sellerName', productToSave.sellerName);
       formData.append('sellerEmail', productToSave.sellerEmail);
@@ -153,8 +251,12 @@ export default function AddItem({ user }) {
       seller: user?._id || user?.id || "",
       sellerName: user?.name || "",
       sellerEmail: user?.email || "",
-      userId: user?._id || user?.id || ""
+      userId: user?._id || user?.id || "",
+      hasVariations: false,
+      variationType: "",
+      variations: []
     });
+    setVariations([]);
   };
 
   return (
@@ -333,66 +435,239 @@ export default function AddItem({ user }) {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                    Stock Quantity
+              {/* Product Variations Toggle */}
+              <div style={{ 
+                padding: "1rem", 
+                background: "#f8f9fa", 
+                borderRadius: "8px", 
+                border: "1px solid #e9ecef" 
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: "500" }}>
+                    <input
+                      type="checkbox"
+                      name="hasVariations"
+                      checked={productData.hasVariations}
+                      onChange={(e) => handleChange({ target: { name: 'hasVariations', value: e.target.checked.toString() } })}
+                      style={{ transform: "scale(1.2)" }}
+                    />
+                    This product has variations (e.g., different sizes, colors, storage)
                   </label>
-                  <input
-                    type="number"
-                    name="stock"
-                    value={productData.stock}
-                    onChange={handleChange}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                      fontSize: "1rem"
-                    }}
-                  />
                 </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                    Price ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={productData.price}
-                    onChange={handleChange}
-                    step="0.01"
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                      fontSize: "1rem"
-                    }}
-                  />
-                </div>
+
+                {productData.hasVariations && (
+                  <div>
+                    <div style={{ marginBottom: "1rem" }}>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                        Variation Type
+                      </label>
+                      <input
+                        type="text"
+                        name="variationType"
+                        value={productData.variationType}
+                        onChange={handleChange}
+                        placeholder="e.g., Size, Color, Storage, Memory"
+                        style={{
+                          width: "100%",
+                          padding: "0.75rem",
+                          borderRadius: "6px",
+                          border: "1px solid #ccc",
+                          fontSize: "1rem"
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: "1rem" }}>
+                      <button
+                        type="button"
+                        onClick={addVariation}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: "6px",
+                          border: "1px solid #007bff",
+                          background: "#007bff",
+                          color: "white",
+                          cursor: "pointer",
+                          fontSize: "0.9rem"
+                        }}
+                      >
+                        + Add Variation
+                      </button>
+                    </div>
+
+                    {variations.map((variation, index) => (
+                      <div key={index} style={{
+                        padding: "1rem",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "6px",
+                        marginBottom: "1rem",
+                        background: "white"
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                          <h4 style={{ margin: 0, fontSize: "1rem" }}>Variation {index + 1}</h4>
+                          <button
+                            type="button"
+                            onClick={() => removeVariation(index)}
+                            style={{
+                              padding: "0.25rem 0.5rem",
+                              borderRadius: "4px",
+                              border: "1px solid #dc3545",
+                              background: "#dc3545",
+                              color: "white",
+                              cursor: "pointer",
+                              fontSize: "0.8rem"
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem" }}>
+                          <div>
+                            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem", fontWeight: "500" }}>
+                              Name *
+                            </label>
+                            <input
+                              type="text"
+                              value={variation.name}
+                              onChange={(e) => updateVariation(index, 'name', e.target.value)}
+                              placeholder="e.g., Small, Red, 64GB"
+                              style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "0.9rem"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem", fontWeight: "500" }}>
+                              Price ($) *
+                            </label>
+                            <input
+                              type="number"
+                              value={variation.price}
+                              onChange={(e) => updateVariation(index, 'price', parseFloat(e.target.value) || 0)}
+                              step="0.01"
+                              style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "0.9rem"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem", fontWeight: "500" }}>
+                              Discounted Price ($)
+                            </label>
+                            <input
+                              type="number"
+                              value={variation.discountedPrice}
+                              onChange={(e) => updateVariation(index, 'discountedPrice', parseFloat(e.target.value) || 0)}
+                              step="0.01"
+                              style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "0.9rem"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem", fontWeight: "500" }}>
+                              Stock *
+                            </label>
+                            <input
+                              type="number"
+                              value={variation.stock}
+                              onChange={(e) => updateVariation(index, 'stock', parseInt(e.target.value) || 0)}
+                              min="0"
+                              style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "0.9rem"
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                    Discounted Price ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="discountedPrice"
-                    value={productData.discountedPrice}
-                    onChange={handleChange}
-                    step="0.01"
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                      fontSize: "1rem"
-                    }}
-                  />
-                </div>
+              {/* Base Price/Stock (only show if no variations) */}
+              {!productData.hasVariations && (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                        Stock Quantity
+                      </label>
+                      <input
+                        type="number"
+                        name="stock"
+                        value={productData.stock}
+                        onChange={handleChange}
+                        style={{
+                          width: "100%",
+                          padding: "0.75rem",
+                          borderRadius: "6px",
+                          border: "1px solid #ccc",
+                          fontSize: "1rem"
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                        Price ($)
+                      </label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={productData.price}
+                        onChange={handleChange}
+                        step="0.01"
+                        style={{
+                          width: "100%",
+                          padding: "0.75rem",
+                          borderRadius: "6px",
+                          border: "1px solid #ccc",
+                          fontSize: "1rem"
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                        Discounted Price ($)
+                      </label>
+                      <input
+                        type="number"
+                        name="discountedPrice"
+                        value={productData.discountedPrice}
+                        onChange={handleChange}
+                        step="0.01"
+                        style={{
+                          width: "100%",
+                          padding: "0.75rem",
+                          borderRadius: "6px",
+                          border: "1px solid #ccc",
+                          fontSize: "1rem"
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
                     Product Photo

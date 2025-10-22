@@ -4,12 +4,26 @@ import Product from '../models/productModel.js';
 // Create a new product
 export const createProduct = async (req, res) => {
   try {
-    const { productId, name, description, category, price, discountedPrice, stock, seller, sellerName, sellerEmail } = req.body;
+    const { 
+      productId, 
+      name, 
+      description, 
+      category, 
+      price, 
+      discountedPrice, 
+      stock, 
+      seller, 
+      sellerName, 
+      sellerEmail,
+      hasVariations,
+      variationType,
+      variations
+    } = req.body;
 
     // Validate required fields
-    if (!productId || !name || !description || !category || !price || !stock || !seller || !sellerName || !sellerEmail) {
+    if (!productId || !name || !description || !category || !seller || !sellerName || !sellerEmail) {
       return res.status(400).json({ 
-        error: 'Missing required fields: productId, name, description, category, price, stock, seller, sellerName, and sellerEmail are required' 
+        error: 'Missing required fields: productId, name, description, category, seller, sellerName, and sellerEmail are required' 
       });
     }
 
@@ -29,6 +43,32 @@ export const createProduct = async (req, res) => {
       });
     }
 
+    // Parse variations if provided
+    let parsedVariations = [];
+    if (hasVariations === 'true' && variations) {
+      try {
+        parsedVariations = JSON.parse(variations);
+        if (!Array.isArray(parsedVariations) || parsedVariations.length === 0) {
+          return res.status(400).json({ 
+            error: 'Variations must be a non-empty array when hasVariations is true' 
+          });
+        }
+        // Validate each variation
+        for (let i = 0; i < parsedVariations.length; i++) {
+          const variation = parsedVariations[i];
+          if (!variation.name || !variation.price || variation.stock === undefined) {
+            return res.status(400).json({ 
+              error: `Variation ${i + 1} is missing required fields: name, price, and stock are required` 
+            });
+          }
+        }
+      } catch (error) {
+        return res.status(400).json({ 
+          error: 'Invalid variations format. Must be valid JSON array.' 
+        });
+      }
+    }
+
     // If file uploaded, construct public URL
     let photoUrl = undefined;
     if (req.file) {
@@ -37,21 +77,35 @@ export const createProduct = async (req, res) => {
       photoUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
     }
 
-    // Create new product
-    const product = new Product({
+    // Create product data object
+    const productData = {
       productId: productId.toUpperCase(),
       name,
       description,
       category,
-      price,
-      discountedPrice: discountedPrice || price,
-      stock,
       photo: photoUrl || req.body.photo,
       seller,
       sellerName,
-      sellerEmail
-    });
+      sellerEmail,
+      hasVariations: hasVariations === 'true',
+      variationType: variationType || '',
+      variations: parsedVariations
+    };
 
+    // Add base price/stock only if no variations
+    if (!productData.hasVariations) {
+      if (!price || !stock) {
+        return res.status(400).json({ 
+          error: 'Price and stock are required when hasVariations is false' 
+        });
+      }
+      productData.price = parseFloat(price);
+      productData.discountedPrice = discountedPrice ? parseFloat(discountedPrice) : parseFloat(price);
+      productData.stock = parseInt(stock);
+    }
+
+    // Create new product
+    const product = new Product(productData);
     const savedProduct = await product.save();
     
     res.status(201).json({

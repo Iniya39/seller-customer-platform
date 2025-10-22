@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import AddItem from "./pages/AddItem";
 import EditItem from "./pages/EditItem";
 import ManageOrders from "./pages/ManageOrders";
+import CustomerManagement from "./pages/CustomerManagement";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -16,8 +17,8 @@ export default function App() {
           <Route path="/" element={<Dashboard user={user} />} />
           <Route path="/add-item" element={<AddItem user={user} />} />
           <Route path="/edit-item/:id" element={<EditItem />} />
-
           <Route path="/manage-orders" element={<ManageOrders />} />
+          <Route path="/customer-management" element={<CustomerManagement user={user} />} />
         </Routes>
       ) : (
         <LoginPage setLoggedIn={setUser} />

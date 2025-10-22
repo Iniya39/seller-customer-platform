@@ -12,6 +12,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [cartMessage, setCartMessage] = useState('')
   const [quantity, setQuantity] = useState(1)
+  const [selectedVariation, setSelectedVariation] = useState(null)
 
   useEffect(() => {
     fetchProducts()
@@ -70,6 +71,15 @@ export default function ProductsPage() {
         return
       }
 
+      // Check if product has variations and a variation is selected
+      if (product.hasVariations && product.variations && product.variations.length > 0) {
+        if (!selectedVariation) {
+          setCartMessage('Please select a variation before adding to cart')
+          setTimeout(() => setCartMessage(''), 3000)
+          return
+        }
+      }
+
       console.log('User object:', user) // Debug log
       console.log('Product object:', product) // Debug log
 
@@ -83,16 +93,29 @@ export default function ProductsPage() {
         return
       }
 
+      const cartData = {
+        userId: userId,
+        productId: product._id,
+        quantity: quantity
+      };
+
+      // Add variation data if product has variations
+      if (product.hasVariations && selectedVariation) {
+        cartData.variation = {
+          name: selectedVariation.name,
+          price: selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price 
+            ? selectedVariation.discountedPrice 
+            : selectedVariation.price,
+          originalPrice: selectedVariation.price
+        };
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: userId,
-          productId: product._id,
-          quantity: quantity
-        })
+        body: JSON.stringify(cartData)
       })
 
       const data = await response.json()
@@ -101,6 +124,7 @@ export default function ProductsPage() {
         setCartMessage(`✅ ${quantity} item(s) added to cart successfully!`)
         setTimeout(() => setCartMessage(''), 3000)
         setQuantity(1) // Reset quantity after successful add
+        setSelectedVariation(null) // Reset selected variation
       } else {
         setCartMessage(`❌ ${data.error}`)
         setTimeout(() => setCartMessage(''), 3000)
@@ -325,41 +349,149 @@ export default function ProductsPage() {
                   {selectedProduct.name}
                 </h2>
                 
-                <div style={{ marginBottom: '2rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <span style={{ 
-                      fontSize: '2.5rem', 
-                      fontWeight: '700', 
-                      color: '#059669' 
+                {/* Variation Selection */}
+                {selectedProduct.hasVariations && selectedProduct.variations && selectedProduct.variations.length > 0 ? (
+                  <div style={{ marginBottom: '2rem' }}>
+                    <h3 style={{ 
+                      margin: '0 0 1rem 0', 
+                      color: '#0f172a', 
+                      fontSize: '1.3rem',
+                      fontWeight: '600'
                     }}>
-                      ${selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price 
-                        ? selectedProduct.discountedPrice 
-                        : selectedProduct.price}
-                    </span>
-                    {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
-                      <span style={{ 
-                        fontSize: '1.5rem', 
-                        color: '#64748b', 
-                        textDecoration: 'line-through' 
+                      Select {selectedProduct.variationType}
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                      {selectedProduct.variations.map((variation, index) => {
+                        const isSelected = selectedVariation && selectedVariation.name === variation.name;
+                        const isOutOfStock = variation.stock === 0;
+                        const displayPrice = variation.discountedPrice && variation.discountedPrice < variation.price 
+                          ? variation.discountedPrice 
+                          : variation.price;
+                        const hasDiscount = variation.discountedPrice && variation.discountedPrice < variation.price;
+                        
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => !isOutOfStock && setSelectedVariation(variation)}
+                            disabled={isOutOfStock}
+                            style={{
+                              padding: '0.75rem 1rem',
+                              borderRadius: '8px',
+                              border: isSelected ? '2px solid #3b82f6' : '1px solid #d1d5db',
+                              background: isSelected ? '#eff6ff' : isOutOfStock ? '#f9fafb' : 'white',
+                              color: isOutOfStock ? '#9ca3af' : isSelected ? '#1d4ed8' : '#374151',
+                              cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s',
+                              opacity: isOutOfStock ? 0.6 : 1
+                            }}
+                          >
+                            <div style={{ textAlign: 'left' }}>
+                              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                                {variation.name}
+                              </div>
+                              <div style={{ fontSize: '0.9rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <span style={{ fontWeight: '600' }}>${displayPrice}</span>
+                                  {hasDiscount && (
+                                    <span style={{ 
+                                      fontSize: '0.8rem', 
+                                      color: '#64748b', 
+                                      textDecoration: 'line-through' 
+                                    }}>
+                                      ${variation.price}
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                  Stock: {variation.stock}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {selectedVariation && (
+                      <div style={{ 
+                        padding: '1rem', 
+                        background: '#f0f9ff', 
+                        borderRadius: '8px', 
+                        border: '1px solid #bae6fd' 
                       }}>
-                        ${selectedProduct.price}
-                      </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                          <span style={{ 
+                            fontSize: '2rem', 
+                            fontWeight: '700', 
+                            color: '#059669' 
+                          }}>
+                            ${selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price 
+                              ? selectedVariation.discountedPrice 
+                              : selectedVariation.price}
+                          </span>
+                          {selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price && (
+                            <span style={{ 
+                              fontSize: '1.2rem', 
+                              color: '#64748b', 
+                              textDecoration: 'line-through' 
+                            }}>
+                              ${selectedVariation.price}
+                            </span>
+                          )}
+                        </div>
+                        {selectedVariation.discountedPrice && selectedVariation.discountedPrice < selectedVariation.price && (
+                          <div style={{ 
+                            fontSize: '1rem', 
+                            color: '#dc2626', 
+                            fontWeight: '600',
+                            background: '#fef2f2',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '6px',
+                            display: 'inline-block'
+                          }}>
+                            You Save: ${(selectedVariation.price - selectedVariation.discountedPrice).toFixed(2)}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
-                    <div style={{ 
-                      fontSize: '1.1rem', 
-                      color: '#dc2626', 
-                      fontWeight: '600',
-                      background: '#fef2f2',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '6px',
-                      display: 'inline-block'
-                    }}>
-                      You Save: ${(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
+                ) : (
+                  <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                      <span style={{ 
+                        fontSize: '2.5rem', 
+                        fontWeight: '700', 
+                        color: '#059669' 
+                      }}>
+                        ${selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price 
+                          ? selectedProduct.discountedPrice 
+                          : selectedProduct.price}
+                      </span>
+                      {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
+                        <span style={{ 
+                          fontSize: '1.5rem', 
+                          color: '#64748b', 
+                          textDecoration: 'line-through' 
+                        }}>
+                          ${selectedProduct.price}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
+                    {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
+                      <div style={{ 
+                        fontSize: '1.1rem', 
+                        color: '#dc2626', 
+                        fontWeight: '600',
+                        background: '#fef2f2',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        display: 'inline-block'
+                      }}>
+                        You Save: ${(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div style={{ marginBottom: '2rem' }}>
                   <h3 style={{ 
@@ -548,11 +680,27 @@ export default function ProductsPage() {
 }
 
 function ProductCard({ product, onClick }) {
-  const displayPrice = product.discountedPrice && product.discountedPrice < product.price 
-    ? product.discountedPrice 
-    : product.price
-
-  const hasDiscount = product.discountedPrice && product.discountedPrice < product.price
+  // Handle pricing for products with variations
+  let displayPrice, hasDiscount, priceRange;
+  
+  if (product.hasVariations && product.variations && product.variations.length > 0) {
+    const prices = product.variations.map(v => v.discountedPrice && v.discountedPrice < v.price ? v.discountedPrice : v.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    
+    if (minPrice === maxPrice) {
+      displayPrice = minPrice;
+      hasDiscount = false;
+    } else {
+      priceRange = `$${minPrice} - $${maxPrice}`;
+      hasDiscount = false;
+    }
+  } else {
+    displayPrice = product.discountedPrice && product.discountedPrice < product.price 
+      ? product.discountedPrice 
+      : product.price;
+    hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
+  }
 
   return (
     <div style={{
@@ -597,34 +745,60 @@ function ProductCard({ product, onClick }) {
       }}>
         {product.name}
       </h3>
+
+      {/* Show variation type if available */}
+      {product.hasVariations && product.variationType && (
+        <div style={{ 
+          fontSize: '0.8rem', 
+          color: '#64748b',
+          marginBottom: '0.5rem',
+          fontWeight: '500'
+        }}>
+          {product.variationType} available
+        </div>
+      )}
       
       <div style={{ marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ 
-            fontSize: '1.2rem', 
-            fontWeight: '700', 
-            color: '#059669' 
-          }}>
-            ${displayPrice}
-          </span>
-          {hasDiscount && (
+        {priceRange ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ 
-              fontSize: '0.9rem', 
-              color: '#64748b', 
-              textDecoration: 'line-through' 
+              fontSize: '1.2rem', 
+              fontWeight: '700', 
+              color: '#059669' 
             }}>
-              ${product.price}
+              {priceRange}
             </span>
-          )}
-        </div>
-        {hasDiscount && (
-          <div style={{ 
-            fontSize: '0.8rem', 
-            color: '#dc2626', 
-            fontWeight: '600' 
-          }}>
-            Save ${(product.price - product.discountedPrice).toFixed(2)}
           </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ 
+                fontSize: '1.2rem', 
+                fontWeight: '700', 
+                color: '#059669' 
+              }}>
+                ${displayPrice}
+              </span>
+              {hasDiscount && (
+                <span style={{ 
+                  fontSize: '0.9rem', 
+                  color: '#64748b', 
+                  textDecoration: 'line-through' 
+                }}>
+                  ${product.price}
+                </span>
+              )}
+            </div>
+            {hasDiscount && (
+              <div style={{ 
+                fontSize: '0.8rem', 
+                color: '#dc2626', 
+                fontWeight: '600' 
+              }}>
+                Save ${(product.price - product.discountedPrice).toFixed(2)}
+              </div>
+            )}
+          </>
         )}
       </div>
 
