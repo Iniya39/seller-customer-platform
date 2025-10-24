@@ -13,6 +13,7 @@ export default function AddItem({ user }) {
     stockStatus: "in_stock",
     price: 0,
     discountedPrice: 0,
+    tax: 0,
     photo: "",
     category: "",
     seller: user?._id || user?.id || "",
@@ -272,6 +273,7 @@ export default function AddItem({ user }) {
         combination: combo,
         price: 0,
         discountedPrice: 0,
+        tax: 0,
         stock: 'in_stock',
         images: [],
         isActive: true
@@ -878,7 +880,7 @@ export default function AddItem({ user }) {
                                 </div>
                               </div>
 
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: "1rem" }}>
                                 <div>
                                   <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
                                     Price ($) *
@@ -905,6 +907,24 @@ export default function AddItem({ user }) {
                                     type="number"
                                     value={variant.discountedPrice}
                                     onChange={(e) => updateVariant(index, 'discountedPrice', parseFloat(e.target.value) || 0)}
+                                    step="0.01"
+                                    style={{
+                                      width: "100%",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      border: "1px solid #ccc",
+                                      fontSize: "0.9rem"
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
+                                    Tax ($)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={variant.tax || 0}
+                                    onChange={(e) => updateVariant(index, 'tax', parseFloat(e.target.value) || 0)}
                                     step="0.01"
                                     style={{
                                       width: "100%",
@@ -1011,7 +1031,7 @@ export default function AddItem({ user }) {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                     <div>
                       <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
                         Discounted Price ($)
@@ -1029,6 +1049,26 @@ export default function AddItem({ user }) {
                           border: "1px solid #ccc",
                           fontSize: "1rem"
                         }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                        Tax Amount ($)
+                      </label>
+                      <input
+                        type="number"
+                        name="tax"
+                        value={productData.tax}
+                        onChange={handleChange}
+                        step="0.01"
+                        style={{
+                          width: "100%",
+                          padding: "0.75rem",
+                          borderRadius: "6px",
+                          border: "1px solid #ccc",
+                          fontSize: "1rem"
+                        }}
+                        placeholder="Enter tax amount"
                       />
                     </div>
                   </div>

@@ -10,36 +10,63 @@ export default function CartPage() {
   const [message, setMessage] = useState('')
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [user, setUser] = useState(null)
+  const [pendingCheckout, setPendingCheckout] = useState(false)
   const { cart, loading, fetchCart, updateCartItem, removeFromCart, clearCart } = useCart()
 
 
   // Handle checkout process
   const handleCheckout = () => {
     const userData = getCurrentUser()
-    
-    if (!isProfileComplete(userData)) {
-      setShowProfileModal(true)
-      setMessage('⚠️ Please complete your profile to proceed with checkout')
-      setTimeout(() => setMessage(''), 5000)
-      return
-    }
-
-    // Proceed with checkout - navigate to order summary
     const actualUser = getUserObject(userData)
-
+    
+    // Debug logging
+    console.log('CartPage: User data:', userData)
+    console.log('CartPage: Actual user:', actualUser)
+    console.log('CartPage: Profile complete:', isProfileComplete(userData))
+    
+    // Always populate with existing profile data, even if incomplete
     const checkoutData = {
       user: {
-        name: actualUser.name,
-        email: actualUser.email,
-        phone: actualUser.phone,
-        address: actualUser.address
+        name: actualUser?.name || '',
+        phone: actualUser?.phone || '',
+        address: actualUser?.address || {
+          street: '',
+          city: '',
+          state: '',
+          pincode: '',
+          country: 'India'
+        }
       },
       cart: cart,
       totalAmount: cart?.totalAmount || 0
     }
 
-    // Navigate to order summary page
+    // Check if profile is complete, if not show modal
+    if (!isProfileComplete(userData)) {
+      console.log('CartPage: Profile incomplete, showing modal')
+      setPendingCheckout(true)
+      setShowProfileModal(true)
+      setMessage('⚠️ Please complete your profile to proceed with checkout')
+      setTimeout(() => setMessage(''), 5000)
+      return
+    }
+    
+    console.log('CartPage: Profile complete, proceeding to order summary')
+
+    // Navigate to order summary page with pre-filled data
     navigate('/order-summary', { state: { orderData: checkoutData } })
+  }
+
+  // Handle profile modal close
+  const handleProfileModalClose = () => {
+    setShowProfileModal(false)
+    if (pendingCheckout) {
+      setPendingCheckout(false)
+      // Automatically proceed with checkout after profile is saved
+      setTimeout(() => {
+        handleCheckout()
+      }, 1000) // Small delay to ensure profile is saved
+    }
   }
 
   // Fetch cart data
@@ -325,9 +352,26 @@ export default function CartPage() {
                           >
                             -
                           </button>
-                          <span style={{ minWidth: '30px', textAlign: 'center', fontWeight: '500' }}>
-                            {item.quantity}
-                          </span>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value) || 1
+                              updateQuantity(product._id, Math.max(1, value))
+                            }}
+                            min="1"
+                            style={{
+                              width: '60px',
+                              padding: '0.25rem',
+                              borderRadius: '4px',
+                              border: '1px solid #d1d5db',
+                              background: 'white',
+                              fontSize: '0.9rem',
+                              fontWeight: '500',
+                              textAlign: 'center',
+                              outline: 'none'
+                            }}
+                          />
                           <button 
                             onClick={() => updateQuantity(product._id, item.quantity + 1)}
                             style={{
@@ -483,7 +527,7 @@ export default function CartPage() {
       {/* Profile Modal */}
       <ProfileModal 
         isOpen={showProfileModal} 
-        onClose={() => setShowProfileModal(false)} 
+        onClose={handleProfileModalClose} 
       />
     </div>
   )

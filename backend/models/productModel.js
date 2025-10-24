@@ -33,6 +33,11 @@ const productSchema = new mongoose.Schema({
     type: Number,
     min: 0
   },
+  tax: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
   // Stock status (for products without variations)
   stockStatus: {
     type: String,
@@ -74,6 +79,11 @@ const productSchema = new mongoose.Schema({
         discountedPrice: {
           type: Number,
           min: 0
+        },
+        tax: {
+          type: Number,
+          min: 0,
+          default: 0
         },
         stock: {
           type: String,

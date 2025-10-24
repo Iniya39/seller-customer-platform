@@ -9,13 +9,49 @@ export default function OrderSummary() {
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
     const data = location.state?.orderData || JSON.parse(localStorage.getItem('currentOrder') || 'null')
     if (data) {
       setOrderData(data)
     } else {
-      navigate('/cart')
+      // If no order data, try to load from user profile
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        const parsedUser = JSON.parse(userData)
+        
+        // Handle different user data structures
+        let actualUser
+        if (parsedUser.customer) {
+          actualUser = parsedUser.customer
+        } else if (parsedUser.user) {
+          actualUser = parsedUser.user
+        } else {
+          actualUser = parsedUser
+        }
+        
+        // Create order data with user profile
+        const profileOrderData = {
+          user: {
+            name: actualUser.name || '',
+            phone: actualUser.phone || '',
+            address: actualUser.address || {
+              street: '',
+              city: '',
+              state: '',
+              pincode: '',
+              country: 'India'
+            }
+          },
+          cart: { items: [], totalAmount: 0 },
+          totalAmount: 0
+        }
+        
+        setOrderData(profileOrderData)
+      } else {
+        navigate('/cart')
+      }
     }
     setLoading(false)
   }, [location.state, navigate])
@@ -62,7 +98,26 @@ export default function OrderSummary() {
     navigate('/payment', { state: { orderData } })
   }
 
-  const handleSaveProfile = async () => {
+
+  const handleBack = () => {
+    navigate(-1)
+  }
+
+  const handleEdit = () => {
+    setIsEditing(true)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setHasChanges(false)
+    // Reset to original data if needed
+    const originalData = location.state?.orderData || JSON.parse(localStorage.getItem('currentOrder') || 'null')
+    if (originalData) {
+      setOrderData(originalData)
+    }
+  }
+
+  const handleSave = async () => {
     if (!hasChanges) return
     
     setSaving(true)
@@ -135,6 +190,7 @@ export default function OrderSummary() {
         
         setMessage('✅ Profile saved successfully!')
         setHasChanges(false)
+        setIsEditing(false)
         setTimeout(() => setMessage(''), 3000)
       } else {
         setMessage(`❌ ${data.error}`)
@@ -146,10 +202,6 @@ export default function OrderSummary() {
     } finally {
       setSaving(false)
     }
-  }
-
-  const handleBack = () => {
-    navigate(-1)
   }
 
   if (loading) {
@@ -216,24 +268,96 @@ export default function OrderSummary() {
             padding: '1.5rem',
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            <h2 style={{ margin: '0 0 1rem 0', color: '#0f172a', fontSize: '1.25rem' }}>
-              Customer Details
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.25rem' }}>
+                Customer Details
+              </h2>
+              {!isEditing ? (
+                <button
+                  onClick={handleEdit}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid #3b82f6',
+                    background: 'white',
+                    color: '#3b82f6',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#3b82f6'
+                    e.target.style.color = 'white'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'white'
+                    e.target.style.color = '#3b82f6'
+                  }}
+                >
+                  ✏️ Edit
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={handleCancelEdit}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '8px',
+                      border: '1px solid #dc2626',
+                      background: 'white',
+                      color: '#dc2626',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#dc2626'
+                      e.target.style.color = 'white'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'white'
+                      e.target.style.color = '#dc2626'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={!hasChanges || saving}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: (!hasChanges || saving) ? '#9ca3af' : '#059669',
+                      color: 'white',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      cursor: (!hasChanges || saving) ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {saving ? 'Saving...' : '💾 Save'}
+                  </button>
+                </div>
+              )}
+            </div>
             <div style={{ display: 'grid', gap: '0.75rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.35rem', color: '#64748b' }}>Full Name</label>
                 <input
                   value={orderData.user.name || ''}
                   onChange={(e) => updateUserField('name', e.target.value)}
-                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.35rem', color: '#64748b' }}>Email</label>
-                <input
-                  value={orderData.user.email || ''}
-                  disabled
-                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', color: '#6b7280' }}
+                  disabled={!isEditing}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.7rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid #d1d5db',
+                    background: isEditing ? 'white' : '#f9fafb',
+                    color: isEditing ? '#0f172a' : '#6b7280'
+                  }}
                 />
               </div>
               <div>
@@ -241,7 +365,15 @@ export default function OrderSummary() {
                 <input
                   value={orderData.user.phone || ''}
                   onChange={(e) => updateUserField('phone', e.target.value)}
-                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                  disabled={!isEditing}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.7rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid #d1d5db',
+                    background: isEditing ? 'white' : '#f9fafb',
+                    color: isEditing ? '#0f172a' : '#6b7280'
+                  }}
                 />
               </div>
             </div>
@@ -263,7 +395,16 @@ export default function OrderSummary() {
                   rows={3}
                   value={orderData.user.address?.street || ''}
                   onChange={(e) => updateUserField('address.street', e.target.value)}
-                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db', resize: 'vertical' }}
+                  disabled={!isEditing}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.7rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid #d1d5db', 
+                    resize: 'vertical',
+                    background: isEditing ? 'white' : '#f9fafb',
+                    color: isEditing ? '#0f172a' : '#6b7280'
+                  }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -272,7 +413,15 @@ export default function OrderSummary() {
                   <input
                     value={orderData.user.address?.city || ''}
                     onChange={(e) => updateUserField('address.city', e.target.value)}
-                    style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                    disabled={!isEditing}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.7rem', 
+                      borderRadius: '8px', 
+                      border: '1px solid #d1d5db',
+                      background: isEditing ? 'white' : '#f9fafb',
+                      color: isEditing ? '#0f172a' : '#6b7280'
+                    }}
                   />
                 </div>
                 <div>
@@ -280,7 +429,15 @@ export default function OrderSummary() {
                   <input
                     value={orderData.user.address?.state || ''}
                     onChange={(e) => updateUserField('address.state', e.target.value)}
-                    style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                    disabled={!isEditing}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.7rem', 
+                      borderRadius: '8px', 
+                      border: '1px solid #d1d5db',
+                      background: isEditing ? 'white' : '#f9fafb',
+                      color: isEditing ? '#0f172a' : '#6b7280'
+                    }}
                   />
                 </div>
               </div>
@@ -290,7 +447,15 @@ export default function OrderSummary() {
                   <input
                     value={orderData.user.address?.pincode || ''}
                     onChange={(e) => updateUserField('address.pincode', e.target.value)}
-                    style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                    disabled={!isEditing}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.7rem', 
+                      borderRadius: '8px', 
+                      border: '1px solid #d1d5db',
+                      background: isEditing ? 'white' : '#f9fafb',
+                      color: isEditing ? '#0f172a' : '#6b7280'
+                    }}
                   />
                 </div>
                 <div>
@@ -298,7 +463,15 @@ export default function OrderSummary() {
                   <input
                     value={orderData.user.address?.country || 'India'}
                     onChange={(e) => updateUserField('address.country', e.target.value)}
-                    style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                    disabled={!isEditing}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.7rem', 
+                      borderRadius: '8px', 
+                      border: '1px solid #d1d5db',
+                      background: isEditing ? 'white' : '#f9fafb',
+                      color: isEditing ? '#0f172a' : '#6b7280'
+                    }}
                   />
                 </div>
               </div>
@@ -564,29 +737,6 @@ export default function OrderSummary() {
             </div>
           </div>
 
-          {/* Save Profile Button */}
-          {hasChanges && (
-            <div style={{ marginTop: '1rem' }}>
-              <button
-                onClick={handleSaveProfile}
-                disabled={saving}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: saving ? '#9ca3af' : '#3b82f6',
-                  color: 'white',
-                  fontSize: '0.95rem',
-                  fontWeight: '500',
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {saving ? 'Saving...' : '💾 Save Profile Changes'}
-              </button>
-            </div>
-          )}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
             <button

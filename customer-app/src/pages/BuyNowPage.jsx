@@ -11,6 +11,7 @@ export default function BuyNowPage() {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [message, setMessage] = useState('')
   const [user, setUser] = useState(null)
+  const [pendingCheckout, setPendingCheckout] = useState(false)
 
   useEffect(() => {
     // Get product data from navigation state
@@ -34,28 +35,39 @@ export default function BuyNowPage() {
   // Check if profile is complete
   const isProfileComplete = (userData) => {
     if (!userData) return false
-    const actualUser = userData.user || userData
+    
+    // Handle different user data structures
+    let actualUser
+    if (userData.customer) {
+      actualUser = userData.customer
+    } else if (userData.user) {
+      actualUser = userData.user
+    } else {
+      actualUser = userData
+    }
+    
     return actualUser.name && actualUser.phone && 
       actualUser.address?.street && actualUser.address?.city && 
       actualUser.address?.state && actualUser.address?.pincode
   }
 
   const handleQuantityChange = (newQuantity) => {
-    if (newQuantity >= 1 && newQuantity <= 10) {
+    if (newQuantity >= 1) {
       setQuantity(newQuantity)
     }
   }
 
   const handleProceedToOrderSummary = () => {
-    if (!isProfileComplete(user)) {
-      setShowProfileModal(true)
-      setMessage('⚠️ Please complete your profile to proceed with checkout')
-      setTimeout(() => setMessage(''), 5000)
-      return
+    // Always populate with existing profile data, even if incomplete
+    let actualUser
+    if (user.customer) {
+      actualUser = user.customer
+    } else if (user.user) {
+      actualUser = user.user
+    } else {
+      actualUser = user
     }
-
-    // Create order data similar to cart checkout
-    const actualUser = user.user || user
+    
     const displayPrice = product.discountedPrice && product.discountedPrice < product.price 
       ? product.discountedPrice 
       : product.price
@@ -63,10 +75,15 @@ export default function BuyNowPage() {
 
     const orderData = {
       user: {
-        name: actualUser.name,
-        email: actualUser.email,
-        phone: actualUser.phone,
-        address: actualUser.address
+        name: actualUser?.name || '',
+        phone: actualUser?.phone || '',
+        address: actualUser?.address || {
+          street: '',
+          city: '',
+          state: '',
+          pincode: '',
+          country: 'India'
+        }
       },
       cart: {
         items: [{
@@ -80,12 +97,41 @@ export default function BuyNowPage() {
       isBuyNow: true // Flag to indicate this is a buy now order
     }
 
-    // Navigate to order summary
+    // Debug logging
+    console.log('BuyNowPage: User data:', user)
+    console.log('BuyNowPage: Actual user:', actualUser)
+    console.log('BuyNowPage: Profile complete:', isProfileComplete(user))
+    
+    // Check if profile is complete, if not show modal
+    if (!isProfileComplete(user)) {
+      console.log('BuyNowPage: Profile incomplete, showing modal')
+      setPendingCheckout(true)
+      setShowProfileModal(true)
+      setMessage('⚠️ Please complete your profile to proceed with checkout')
+      setTimeout(() => setMessage(''), 5000)
+      return
+    }
+    
+    console.log('BuyNowPage: Profile complete, proceeding to order summary')
+
+    // Navigate to order summary with pre-filled data
     navigate('/order-summary', { state: { orderData } })
   }
 
   const handleBackToProducts = () => {
     navigate('/products')
+  }
+
+  // Handle profile modal close
+  const handleProfileModalClose = () => {
+    setShowProfileModal(false)
+    if (pendingCheckout) {
+      setPendingCheckout(false)
+      // Automatically proceed with checkout after profile is saved
+      setTimeout(() => {
+        handleProceedToOrderSummary()
+      }, 1000) // Small delay to ensure profile is saved
+    }
   }
 
   if (loading) {
@@ -256,39 +302,79 @@ export default function BuyNowPage() {
                     justifyContent: 'center',
                     fontSize: '18px',
                     fontWeight: '600',
-                    color: quantity <= 1 ? '#9ca3af' : '#374151'
+                    color: quantity <= 1 ? '#9ca3af' : '#374151',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (quantity > 1) {
+                      e.target.style.background = '#f1f5f9'
+                      e.target.style.borderColor = '#cbd5e1'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (quantity > 1) {
+                      e.target.style.background = 'white'
+                      e.target.style.borderColor = '#d1d5db'
+                    }
                   }}
                 >
                   -
                 </button>
                 
-                <div style={{
-                  minWidth: '60px',
-                  textAlign: 'center',
-                  fontSize: '1.125rem',
-                  fontWeight: '600',
-                  color: '#0f172a',
-                  padding: '0.5rem'
-                }}>
-                  {quantity}
-                </div>
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1
+                    handleQuantityChange(value)
+                  }}
+                  min="1"
+                  style={{
+                    width: '100px',
+                    padding: '0.5rem',
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                    background: 'white',
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    outline: 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#d1d5db'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
                 
                 <button 
                   onClick={() => handleQuantityChange(quantity + 1)}
-                  disabled={quantity >= 10}
                   style={{
                     width: '40px',
                     height: '40px',
                     borderRadius: '8px',
                     border: '1px solid #d1d5db',
-                    background: quantity >= 10 ? '#f9fafb' : 'white',
-                    cursor: quantity >= 10 ? 'not-allowed' : 'pointer',
+                    background: 'white',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '18px',
                     fontWeight: '600',
-                    color: quantity >= 10 ? '#9ca3af' : '#374151'
+                    color: '#374151',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#f1f5f9'
+                    e.target.style.borderColor = '#cbd5e1'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'white'
+                    e.target.style.borderColor = '#d1d5db'
                   }}
                 >
                   +
@@ -296,7 +382,7 @@ export default function BuyNowPage() {
               </div>
               
               <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                (Max 10 items)
+                (No limit)
               </span>
             </div>
           </div>
@@ -426,7 +512,7 @@ export default function BuyNowPage() {
       {/* Profile Modal */}
       <ProfileModal 
         isOpen={showProfileModal} 
-        onClose={() => setShowProfileModal(false)} 
+        onClose={handleProfileModalClose} 
       />
     </div>
   )

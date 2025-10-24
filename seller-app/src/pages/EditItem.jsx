@@ -13,6 +13,7 @@ export default function EditItem() {
     stockStatus: "in_stock",
     price: 0,
     discountedPrice: 0,
+    tax: 0,
     photo: "",
     category: "",
     productId: "",
@@ -601,7 +602,7 @@ export default function EditItem() {
                           </div>
                         </div>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: "1rem" }}>
                           <div>
                             <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
                               Price ($) *
@@ -628,6 +629,24 @@ export default function EditItem() {
                               type="number"
                               value={variant.discountedPrice}
                               onChange={(e) => updateVariant(index, 'discountedPrice', parseFloat(e.target.value) || 0)}
+                              step="0.01"
+                              style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "0.9rem"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
+                              Tax ($)
+                            </label>
+                            <input
+                              type="number"
+                              value={variant.tax || 0}
+                              onChange={(e) => updateVariant(index, 'tax', parseFloat(e.target.value) || 0)}
                               step="0.01"
                               style={{
                                 width: "100%",
@@ -691,7 +710,7 @@ export default function EditItem() {
           {/* Price and Stock - Only show if no variations */}
           {!item.hasVariations && (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Price:</label>
                   <input 
@@ -724,6 +743,24 @@ export default function EditItem() {
                       fontSize: "1rem"
                     }}
                     placeholder="Enter discounted price"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Tax Amount ($):</label>
+                  <input 
+                    type="number" 
+                    name="tax" 
+                    value={item.tax || 0} 
+                    onChange={handleChange}
+                    step="0.01"
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                      fontSize: "1rem"
+                    }}
+                    placeholder="Enter tax amount"
                   />
                 </div>
               </div>

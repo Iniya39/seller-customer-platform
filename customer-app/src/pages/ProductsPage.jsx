@@ -496,6 +496,20 @@ export default function ProductsPage() {
                             You Save: ${(selectedVariant.price - selectedVariant.discountedPrice).toFixed(2)}
                           </div>
                         )}
+                        {selectedVariant.tax && selectedVariant.tax > 0 && (
+                          <div style={{ 
+                            fontSize: '0.9rem', 
+                            color: '#dc2626',
+                            fontWeight: '500',
+                            marginTop: '0.5rem',
+                            background: '#fef2f2',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '6px',
+                            display: 'inline-block'
+                          }}>
+                            + ${selectedVariant.tax.toFixed(2)} tax
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -532,6 +546,20 @@ export default function ProductsPage() {
                         display: 'inline-block'
                       }}>
                         You Save: ${(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
+                      </div>
+                    )}
+                    {selectedProduct.tax && selectedProduct.tax > 0 && (
+                      <div style={{ 
+                        fontSize: '1rem', 
+                        color: '#dc2626',
+                        fontWeight: '500',
+                        marginTop: '0.5rem',
+                        background: '#fef2f2',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        display: 'inline-block'
+                      }}>
+                        + ${selectedProduct.tax.toFixed(2)} tax
                       </div>
                     )}
                   </div>
@@ -591,10 +619,9 @@ export default function ProductsPage() {
                       value={quantity}
                       onChange={(e) => {
                         const value = parseInt(e.target.value) || 1
-                        setQuantity(Math.max(1, Math.min(10, value)))
+                        setQuantity(Math.max(1, value))
                       }}
                       min="1"
-                      max="10"
                       style={{
                         width: '80px',
                         padding: '0.5rem',
@@ -608,7 +635,7 @@ export default function ProductsPage() {
                       }}
                     />
                     <button
-                      onClick={() => setQuantity(Math.min(10, quantity + 1))}
+                      onClick={() => setQuantity(quantity + 1)}
                       style={{
                         width: '40px',
                         height: '40px',
@@ -632,7 +659,7 @@ export default function ProductsPage() {
                     color: '#64748b', 
                     fontSize: '0.9rem' 
                   }}>
-                    Select quantity (1-10)
+                    Select quantity (no limit)
                   </p>
                 </div>
 
@@ -862,6 +889,16 @@ function ProductCard({ product, onClick }) {
                 marginTop: '0.25rem'
               }}>
                 Starting from ${displayPrice}
+              </div>
+            )}
+            {product.tax && product.tax > 0 && (
+              <div style={{ 
+                fontSize: '0.8rem', 
+                color: '#dc2626',
+                fontWeight: '500',
+                marginTop: '0.25rem'
+              }}>
+                + ${product.tax.toFixed(2)} tax
               </div>
             )}
           </>
