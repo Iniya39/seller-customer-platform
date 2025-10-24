@@ -241,7 +241,7 @@ export default function BuyNowPage() {
                 {/* Price Display */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#059669' }}>
-                    ${displayPrice}
+                    ₹{displayPrice}
                   </span>
                   {product.discountedPrice && product.discountedPrice < product.price && (
                     <>
@@ -250,7 +250,7 @@ export default function BuyNowPage() {
                         color: '#64748b', 
                         textDecoration: 'line-through'
                       }}>
-                        ${product.price}
+                        ₹{product.price}
                       </span>
                       <span style={{
                         fontSize: '0.75rem',
@@ -260,7 +260,7 @@ export default function BuyNowPage() {
                         borderRadius: '4px',
                         fontWeight: '500'
                       }}>
-                        Save ${(product.price - product.discountedPrice).toFixed(2)}
+                        Save ₹{(product.price - product.discountedPrice).toFixed(2)}
                       </span>
                     </>
                   )}
@@ -404,7 +404,7 @@ export default function BuyNowPage() {
                   Price per item:
                 </span>
                 <span style={{ fontWeight: '500' }}>
-                  ${displayPrice}
+                  ₹{displayPrice}
                 </span>
               </div>
               
@@ -423,7 +423,7 @@ export default function BuyNowPage() {
                     You Save:
                   </span>
                   <span style={{ fontWeight: '500', color: '#059669' }}>
-                    ${savings.toFixed(2)}
+                    ₹{savings.toFixed(2)}
                   </span>
                 </div>
               )}
@@ -447,7 +447,7 @@ export default function BuyNowPage() {
                 color: '#0f172a' 
               }}>
                 <span>Total Amount:</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span>₹{totalAmount.toFixed(2)}</span>
               </div>
             </div>
           </div>

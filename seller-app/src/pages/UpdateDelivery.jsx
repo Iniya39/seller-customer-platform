@@ -21,7 +21,7 @@ export default function UpdateDelivery() {
 
   // Handle updating delivery status
   const handleUpdate = (orderId, newStatus) => {
-    axios.put(`http://localhost:5000/api/orders/${orderId}`, { status: newStatus })
+    axios.put(`http://localhost:5000/api/orders/₹{orderId}`, { status: newStatus })
       .then(res => {
         setOrders(prev => prev.map(order =>
           order._id === orderId ? { ...order, status: newStatus } : order

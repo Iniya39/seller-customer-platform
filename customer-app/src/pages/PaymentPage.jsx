@@ -52,7 +52,7 @@ export default function PaymentPage() {
         await processOtherPayment()
       } catch (error) {
         console.error('Payment error:', error)
-        setMessage(`❌ Payment failed: ${error.message}`)
+        setMessage(`❌ Payment failed: ₹{error.message}`)
         setTimeout(() => setMessage(''), 5000)
       } finally {
         setProcessing(false)
@@ -123,11 +123,11 @@ export default function PaymentPage() {
       },
       items: orderItems,
       totalAmount: orderData.totalAmount,
-      notes: `Payment method: ${selectedPaymentMethod} - Payment successful`
+      notes: `Payment method: ₹{selectedPaymentMethod} - Payment successful`
     }
 
     // Create order in backend
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders`, {
+    const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ export default function PaymentPage() {
 
   const createLocalOrder = async () => {
     // Create local order data
-    const localOrderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`
+    const localOrderId = `ORD-₹{Date.now()}-₹{Math.random().toString(36).substr(2, 5).toUpperCase()}`
     const paymentData = {
       orderId: localOrderId,
       paymentMethod: selectedPaymentMethod,
@@ -183,7 +183,7 @@ export default function PaymentPage() {
         items: orderData.cart.items,
         totalAmount: orderData.totalAmount,
         status: 'pending',
-        notes: `Payment method: ${selectedPaymentMethod} - Payment successful (Local order)`
+        notes: `Payment method: ₹{selectedPaymentMethod} - Payment successful (Local order)`
       }
     }
 
@@ -268,7 +268,7 @@ export default function PaymentPage() {
               Amount to Pay
             </span>
             <span style={{ fontSize: '1.5rem', fontWeight: '600', color: '#059669' }}>
-              ${totalAmount.toFixed(2)}
+              ₹{totalAmount.toFixed(2)}
             </span>
           </div>
         </div>
@@ -502,9 +502,9 @@ export default function PaymentPage() {
               selectedPaymentMethod === 'upi' ? 'Processing UPI Payment...' :
               'Processing Payment...'
             ) : (
-              selectedPaymentMethod === 'netbanking' ? `Pay $${totalAmount.toFixed(2)} via Net Banking` :
-              selectedPaymentMethod === 'upi' ? `Pay $${totalAmount.toFixed(2)} via UPI` :
-              `Pay $${totalAmount.toFixed(2)}`
+              selectedPaymentMethod === 'netbanking' ? `Pay ₹₹{totalAmount.toFixed(2)} via Net Banking` :
+              selectedPaymentMethod === 'upi' ? `Pay ₹₹{totalAmount.toFixed(2)} via UPI` :
+              `Pay ₹₹{totalAmount.toFixed(2)}`
             )}
           </button>
         </div>

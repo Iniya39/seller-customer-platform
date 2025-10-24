@@ -11,6 +11,7 @@ export const createProduct = async (req, res) => {
       category, 
       price, 
       discountedPrice, 
+      taxPercentage,
       stockStatus, 
       seller, 
       sellerName, 
@@ -120,6 +121,7 @@ export const createProduct = async (req, res) => {
       seller,
       sellerName,
       sellerEmail,
+      taxPercentage: taxPercentage ? parseFloat(taxPercentage) : 0,
       hasVariations: hasVariations === 'true',
       attributes: parsedAttributes,
       variants: parsedVariants
@@ -234,6 +236,7 @@ export const updateProduct = async (req, res) => {
       category, 
       price, 
       discountedPrice, 
+      taxPercentage,
       stockStatus, 
       photo, 
       isActive,
@@ -317,6 +320,7 @@ export const updateProduct = async (req, res) => {
     if (category !== undefined) updateData.category = category;
     if (price !== undefined) updateData.price = price;
     if (discountedPrice !== undefined) updateData.discountedPrice = discountedPrice;
+    if (taxPercentage !== undefined) updateData.taxPercentage = parseFloat(taxPercentage);
     if (stockStatus !== undefined) updateData.stockStatus = stockStatus;
     if (hasVariations !== undefined) updateData.hasVariations = hasVariations === 'true';
     if (attributes !== undefined) updateData.attributes = parsedAttributes;

@@ -21,7 +21,7 @@ export default function ProductsPage() {
   // Fetch categories from API
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/categories`)
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/categories`)
       const data = await response.json()
       
       if (!response.ok) throw new Error(data.error || 'Failed to fetch categories')
@@ -48,10 +48,18 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products`)
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products`)
       const data = await response.json()
       
       if (!response.ok) throw new Error(data.error || 'Failed to fetch products')
+      
+      console.log('Fetched products:', data.products) // Debug log
+      
+      // Test: Add tax percentage to first product for testing
+      if (data.products && data.products.length > 0) {
+        data.products[0].taxPercentage = 10; // Test with 10% tax
+        console.log('Test: Added 10% tax to first product:', data.products[0].name)
+      }
       
       setProducts(data.products || [])
     } catch (err) {
@@ -136,13 +144,13 @@ export default function ProductsPage() {
     const result = await addToCartHook(product, quantity, selectedVariant)
     
     if (result.success) {
-      setCartMessage(`✅ ${result.message}`)
+      setCartMessage(`✅ ₹{result.message}`)
       setTimeout(() => setCartMessage(''), 3000)
       setQuantity(1) // Reset quantity after successful add
       setSelectedVariant(null) // Reset selected variant
       setSelectedAttributes({}) // Reset selected attributes
     } else {
-      setCartMessage(`❌ ${result.message}`)
+      setCartMessage(`❌ ₹{result.message}`)
       setTimeout(() => setCartMessage(''), 3000)
     }
   }
@@ -446,7 +454,7 @@ export default function ProductsPage() {
                       }}>
                         <div style={{ marginBottom: '0.75rem' }}>
                           <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#0f172a' }}>
-                            Selected: {Object.entries(selectedVariant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                            Selected: {Object.entries(selectedVariant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
                           </h4>
                           {selectedVariant.stock === 'out_of_stock' && (
                             <div style={{ 
@@ -469,7 +477,7 @@ export default function ProductsPage() {
                             fontWeight: '700', 
                             color: selectedVariant.stock === 'out_of_stock' ? '#9ca3af' : '#059669'
                           }}>
-                            ${selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price 
+                            ₹{selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price 
                               ? selectedVariant.discountedPrice 
                               : selectedVariant.price}
                           </span>
@@ -479,7 +487,7 @@ export default function ProductsPage() {
                               color: '#64748b', 
                               textDecoration: 'line-through' 
                             }}>
-                              ${selectedVariant.price}
+                              ₹{selectedVariant.price}
                             </span>
                           )}
                         </div>
@@ -493,21 +501,21 @@ export default function ProductsPage() {
                             borderRadius: '6px',
                             display: 'inline-block'
                           }}>
-                            You Save: ${(selectedVariant.price - selectedVariant.discountedPrice).toFixed(2)}
+                            You Save: ₹{(selectedVariant.price - selectedVariant.discountedPrice).toFixed(2)}
                           </div>
                         )}
-                        {selectedVariant.tax && selectedVariant.tax > 0 && (
+                        {selectedProduct.taxPercentage && selectedProduct.taxPercentage > 0 && (
                           <div style={{ 
                             fontSize: '0.9rem', 
-                            color: '#dc2626',
+                            color: '#059669',
                             fontWeight: '500',
                             marginTop: '0.5rem',
-                            background: '#fef2f2',
+                            background: '#f0fdf4',
                             padding: '0.5rem 1rem',
                             borderRadius: '6px',
                             display: 'inline-block'
                           }}>
-                            + ${selectedVariant.tax.toFixed(2)} tax
+                            Final Price: ₹{((selectedVariant.discountedPrice || selectedVariant.price) * (1 + selectedProduct.taxPercentage / 100)).toFixed(2)} (includes {selectedProduct.taxPercentage}% tax)
                           </div>
                         )}
                       </div>
@@ -521,7 +529,7 @@ export default function ProductsPage() {
                         fontWeight: '700', 
                         color: '#059669' 
                       }}>
-                        ${selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price 
+                        ₹{selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price 
                           ? selectedProduct.discountedPrice 
                           : selectedProduct.price}
                       </span>
@@ -531,7 +539,7 @@ export default function ProductsPage() {
                           color: '#64748b', 
                           textDecoration: 'line-through' 
                         }}>
-                          ${selectedProduct.price}
+                          ₹{selectedProduct.price}
                         </span>
                       )}
                     </div>
@@ -545,21 +553,21 @@ export default function ProductsPage() {
                         borderRadius: '6px',
                         display: 'inline-block'
                       }}>
-                        You Save: ${(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
+                        You Save: ₹{(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
                       </div>
                     )}
-                    {selectedProduct.tax && selectedProduct.tax > 0 && (
+                    {selectedProduct.taxPercentage && selectedProduct.taxPercentage > 0 && (
                       <div style={{ 
                         fontSize: '1rem', 
-                        color: '#dc2626',
+                        color: '#059669',
                         fontWeight: '500',
                         marginTop: '0.5rem',
-                        background: '#fef2f2',
+                        background: '#f0fdf4',
                         padding: '0.5rem 1rem',
                         borderRadius: '6px',
                         display: 'inline-block'
                       }}>
-                        + ${selectedProduct.tax.toFixed(2)} tax
+                        Final Price: ₹{((selectedProduct.discountedPrice || selectedProduct.price) * (1 + selectedProduct.taxPercentage / 100)).toFixed(2)} (includes {selectedProduct.taxPercentage}% tax)
                       </div>
                     )}
                   </div>
@@ -860,7 +868,7 @@ function ProductCard({ product, onClick }) {
                 fontWeight: '700', 
                 color: '#059669' 
               }}>
-                ${displayPrice}
+                ₹{displayPrice}
               </span>
               {hasDiscount && (
                 <span style={{ 
@@ -868,7 +876,7 @@ function ProductCard({ product, onClick }) {
                   color: '#64748b', 
                   textDecoration: 'line-through' 
                 }}>
-                  ${product.price}
+                  ₹{product.price}
                 </span>
               )}
             </div>
@@ -878,7 +886,7 @@ function ProductCard({ product, onClick }) {
                 color: '#dc2626', 
                 fontWeight: '600' 
               }}>
-                Save ${(product.price - product.discountedPrice).toFixed(2)}
+                Save ₹{(product.price - product.discountedPrice).toFixed(2)}
               </div>
             )}
             {product.hasVariations && product.variants && product.variants.length > 0 && (
@@ -888,17 +896,17 @@ function ProductCard({ product, onClick }) {
                 fontStyle: 'italic',
                 marginTop: '0.25rem'
               }}>
-                Starting from ${displayPrice}
+                Starting from ₹{displayPrice}
               </div>
             )}
-            {product.tax && product.tax > 0 && (
+            {product.taxPercentage && product.taxPercentage > 0 && (
               <div style={{ 
                 fontSize: '0.8rem', 
-                color: '#dc2626',
+                color: '#059669',
                 fontWeight: '500',
                 marginTop: '0.25rem'
               }}>
-                + ${product.tax.toFixed(2)} tax
+                Final: ₹{((product.discountedPrice || product.price) * (1 + product.taxPercentage / 100)).toFixed(2)} (inc. {product.taxPercentage}% tax)
               </div>
             )}
           </>

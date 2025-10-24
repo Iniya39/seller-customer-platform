@@ -29,7 +29,7 @@ export default function ManageOrders() {
   // Handle order status update
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const response = await axios.put(`http://localhost:5000/api/orders/₹{orderId}/status`, {
         status: newStatus,
         trackingNumber: trackingNumber
       });
@@ -39,7 +39,7 @@ export default function ManageOrders() {
         order._id === orderId ? { ...order, status: newStatus, trackingNumber: trackingNumber } : order
       ));
 
-      setMessage(`Order ${newStatus} successfully!`);
+      setMessage(`Order ₹{newStatus} successfully!`);
       setSelectedOrder(null);
       setTrackingNumber('');
       setTimeout(() => setMessage(''), 3000);
@@ -150,7 +150,7 @@ export default function ManageOrders() {
                         {order.items?.length} item(s)
                       </div>
                     </td>
-                    <td style={{ padding: "1rem", fontWeight: "600" }}>${order.totalAmount?.toFixed(2)}</td>
+                    <td style={{ padding: "1rem", fontWeight: "600" }}>₹{order.totalAmount?.toFixed(2)}</td>
                     <td style={{ padding: "1rem" }}>
                       {order.status === 'pending' ? (
                         <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -364,7 +364,7 @@ export default function ManageOrders() {
                       <span style={{ fontWeight: "600", minWidth: "80px", color: "#374151", marginTop: "0.125rem" }}>Address:</span>
                       <span style={{ color: "#6b7280", lineHeight: "1.4" }}>
                         {selectedOrder.customerDetails?.address ? 
-                          `${selectedOrder.customerDetails.address.street || ''}, ${selectedOrder.customerDetails.address.city || ''}, ${selectedOrder.customerDetails.address.state || ''} - ${selectedOrder.customerDetails.address.pincode || ''}`.replace(/^,\s*|,\s*$/g, '') :
+                          `₹{selectedOrder.customerDetails.address.street || ''}, ₹{selectedOrder.customerDetails.address.city || ''}, ₹{selectedOrder.customerDetails.address.state || ''} - ₹{selectedOrder.customerDetails.address.pincode || ''}`.replace(/^,\s*|,\s*₹/g, '') :
                           'N/A'
                         }
                       </span>
@@ -430,7 +430,7 @@ export default function ManageOrders() {
                             borderRadius: "6px",
                             display: "inline-block"
                           }}>
-                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                            {Object.entries(item.variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
                           </div>
                         )}
                         <div style={{ 
@@ -444,7 +444,7 @@ export default function ManageOrders() {
                             <span style={{ fontWeight: "500" }}>Quantity:</span> {item.quantity}
                           </div>
                           <div style={{ fontSize: "0.9rem", color: "#374151" }}>
-                            <span style={{ fontWeight: "500" }}>Unit Price:</span> ${item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price}
+                            <span style={{ fontWeight: "500" }}>Unit Price:</span> ₹{item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price}
                           </div>
                           <div style={{ 
                             fontSize: "1rem", 
@@ -454,7 +454,7 @@ export default function ManageOrders() {
                             padding: "0.25rem 0.75rem",
                             borderRadius: "6px"
                           }}>
-                            Total: ${((item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price) * item.quantity).toFixed(2)}
+                            Total: ₹{((item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price) * item.quantity).toFixed(2)}
                           </div>
                         </div>
                       </div>
@@ -481,7 +481,7 @@ export default function ManageOrders() {
                     padding: "0.5rem 0"
                   }}>
                     <span style={{ color: "#374151", fontSize: "0.95rem" }}>Subtotal:</span>
-                    <span style={{ color: "#374151", fontWeight: "500" }}>${selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
+                    <span style={{ color: "#374151", fontWeight: "500" }}>₹{selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div style={{ 
                     display: "flex", 
@@ -499,7 +499,7 @@ export default function ManageOrders() {
                     padding: "0.5rem 0"
                   }}>
                     <span style={{ color: "#374151", fontSize: "0.95rem" }}>Tax:</span>
-                    <span style={{ color: "#374151", fontWeight: "500" }}>$0.00</span>
+                    <span style={{ color: "#374151", fontWeight: "500" }}>₹0.00</span>
                   </div>
                   <hr style={{ 
                     border: "none", 
@@ -516,7 +516,7 @@ export default function ManageOrders() {
                     marginTop: "0.5rem"
                   }}>
                     <span style={{ fontSize: "1.1rem", fontWeight: "700", color: "#111827" }}>Total:</span>
-                    <span style={{ fontSize: "1.2rem", fontWeight: "700", color: "#111827" }}>${selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
+                    <span style={{ fontSize: "1.2rem", fontWeight: "700", color: "#111827" }}>₹{selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
                   </div>
                 </div>
               </div>

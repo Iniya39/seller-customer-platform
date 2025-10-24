@@ -63,6 +63,24 @@ export default function OrderSummary() {
     }, 0)
   }
 
+  const calculateTax = (items) => {
+    return items.reduce((sum, item) => {
+      const unit = item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price
+      const taxPercentage = item.product?.taxPercentage || 0
+      return sum + (unit * item.quantity * taxPercentage / 100)
+    }, 0)
+  }
+
+  const calculateTotalWithTax = (items) => {
+    return items.reduce((sum, item) => {
+      const unit = item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price
+      const taxPercentage = item.product?.taxPercentage || 0
+      const itemTotal = unit * item.quantity
+      const taxAmount = itemTotal * taxPercentage / 100
+      return sum + itemTotal + taxAmount
+    }, 0)
+  }
+
   const updateUserField = (fieldPath, value) => {
     setOrderData(prev => {
       const next = { ...prev, user: { ...prev.user } }
@@ -148,8 +166,8 @@ export default function OrderSummary() {
       // Determine which API endpoint to use based on user data structure
       const isCustomerLogin = parsedUser.customer && parsedUser.customer._id
       const apiEndpoint = isCustomerLogin 
-        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/customers/${userId}`
-        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/${userId}`
+        ? `₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/customers/₹{userId}`
+        : `₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/₹{userId}`
 
       console.log('OrderSummary: Using API endpoint:', apiEndpoint)
 
@@ -193,7 +211,7 @@ export default function OrderSummary() {
         setIsEditing(false)
         setTimeout(() => setMessage(''), 3000)
       } else {
-        setMessage(`❌ ${data.error}`)
+        setMessage(`❌ ₹{data.error}`)
         setTimeout(() => setMessage(''), 3000)
       }
     } catch (error) {
@@ -532,7 +550,7 @@ export default function OrderSummary() {
                             borderRadius: "6px",
                             display: "inline-block"
                           }}>
-                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                            {Object.entries(item.variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
                           </div>
                         )}
                         
@@ -622,11 +640,11 @@ export default function OrderSummary() {
                             <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Unit Price:</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                               <span style={{ fontSize: '1rem', fontWeight: '600', color: '#059669' }}>
-                                ${displayPrice}
+                                ₹{displayPrice}
                               </span>
                               {hasDiscount && (
                                 <span style={{ fontSize: '0.85rem', color: '#64748b', textDecoration: 'line-through' }}>
-                                  ${item.price}
+                                  ₹{item.price}
                                 </span>
                               )}
                             </div>
@@ -643,7 +661,17 @@ export default function OrderSummary() {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <span style={{ fontSize: '0.9rem', color: '#dc2626', fontWeight: '500' }}>You Save:</span>
                               <span style={{ fontSize: '1rem', fontWeight: '600', color: '#dc2626' }}>
-                                ${savings.toFixed(2)}
+                                ₹{savings.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Tax Information */}
+                          {product.taxPercentage && product.taxPercentage > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.9rem', color: '#059669', fontWeight: '500' }}>Final Price (inc. {product.taxPercentage}% tax):</span>
+                              <span style={{ fontSize: '1rem', fontWeight: '600', color: '#059669' }}>
+                                ₹{(itemTotal + (itemTotal * product.taxPercentage / 100)).toFixed(2)}
                               </span>
                             </div>
                           )}
@@ -653,9 +681,19 @@ export default function OrderSummary() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>Item Total:</span>
                             <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#0f172a' }}>
-                              ${itemTotal.toFixed(2)}
+                              ₹{itemTotal.toFixed(2)}
                             </span>
                           </div>
+
+                          {/* Total with Tax */}
+                          {product.taxPercentage && product.taxPercentage > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                              <span style={{ fontSize: '1rem', fontWeight: '700', color: '#059669' }}>Final Total:</span>
+                              <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#059669' }}>
+                                ₹{(itemTotal + (itemTotal * product.taxPercentage / 100)).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -690,14 +728,28 @@ export default function OrderSummary() {
                   {cartItems.map((item) => {
                     const displayPrice = item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price
                     const itemTotal = displayPrice * item.quantity
+                    const taxAmount = item.product.taxPercentage ? (itemTotal * item.product.taxPercentage / 100) : 0
+                    const finalTotal = itemTotal + taxAmount
                     return (
-                      <div key={item.product._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                          {item.product.name} × {item.quantity}
-                        </span>
-                        <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#0f172a' }}>
-                          ${itemTotal.toFixed(2)}
-                        </span>
+                      <div key={item.product._id}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                            {item.product.name} × {item.quantity}
+                          </span>
+                          <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#0f172a' }}>
+                            ₹{itemTotal.toFixed(2)}
+                          </span>
+                        </div>
+                        {item.product.taxPercentage && item.product.taxPercentage > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: '1rem' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#059669' }}>
+                              Final (inc. {item.product.taxPercentage}% tax)
+                            </span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: '500', color: '#059669' }}>
+                              ₹{finalTotal.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -711,7 +763,7 @@ export default function OrderSummary() {
                     Subtotal ({cartItems.length} items)
                   </span>
                   <span style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>
-                    ${totalAmount.toFixed(2)}
+                    ₹{totalAmount.toFixed(2)}
                   </span>
                 </div>
                 
@@ -722,7 +774,9 @@ export default function OrderSummary() {
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '1rem', color: '#64748b' }}>Tax</span>
-                  <span style={{ fontSize: '1rem', fontWeight: '500', color: '#0f172a' }}>$0.00</span>
+                  <span style={{ fontSize: '1rem', fontWeight: '500', color: '#0f172a' }}>
+                    ₹{calculateTax(cartItems).toFixed(2)}
+                  </span>
                 </div>
                 
                 <hr style={{ border: 'none', borderTop: '2px solid #e2e8f0', margin: '0.75rem 0' }} />
@@ -730,7 +784,7 @@ export default function OrderSummary() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '1.4rem', fontWeight: '700', color: '#0f172a' }}>Total Amount</span>
                   <span style={{ fontSize: '1.4rem', fontWeight: '700', color: '#0f172a' }}>
-                    ${totalAmount.toFixed(2)}
+                    ₹{calculateTotalWithTax(cartItems).toFixed(2)}
                   </span>
                 </div>
               </div>

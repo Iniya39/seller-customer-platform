@@ -105,7 +105,7 @@ export default function OrderSuccess() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#64748b' }}>Amount Paid:</span>
-              <span style={{ fontWeight: '600', color: '#059669' }}>${amount.toFixed(2)}</span>
+              <span style={{ fontWeight: '600', color: '#059669' }}>₹{amount.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#64748b' }}>Delivery Address:</span>
@@ -140,7 +140,7 @@ export default function OrderSuccess() {
                   {item.product.name} (Qty: {item.quantity})
                 </span>
                 <span style={{ fontWeight: '500' }}>
-                  ${((item.discountedPrice || item.price) * item.quantity).toFixed(2)}
+                  ₹{((item.discountedPrice || item.price) * item.quantity).toFixed(2)}
                 </span>
               </div>
             ))}

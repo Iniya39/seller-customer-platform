@@ -26,10 +26,22 @@ export const useCart = () => {
         return
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/${userId}`)
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/₹{userId}`)
       const data = await response.json()
       
       if (response.ok) {
+        console.log('Cart data:', data.cart) // Debug log
+        
+        // Test: Add tax percentage to cart items for testing
+        if (data.cart && data.cart.items) {
+          data.cart.items.forEach(item => {
+            if (item.product) {
+              item.product.taxPercentage = 10; // Test with 10% tax
+            }
+          });
+          console.log('Test: Added 10% tax to all cart items')
+        }
+        
         setCart(data.cart)
         const itemCount = data.cart?.items?.reduce((total, item) => total + item.quantity, 0) || 0
         setCartItemCount(itemCount)
@@ -62,7 +74,7 @@ export const useCart = () => {
         return
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/${userId}`)
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/₹{userId}`)
       const data = await response.json()
       
       if (response.ok) {
@@ -112,7 +124,7 @@ export const useCart = () => {
         }
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/add`, {
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +137,7 @@ export const useCart = () => {
       if (response.ok) {
         // Refresh cart count after successful add
         await fetchCartCount()
-        return { success: true, message: `${quantity} item(s) added to cart successfully!` }
+        return { success: true, message: `₹{quantity} item(s) added to cart successfully!` }
       } else {
         throw new Error(data.error || 'Failed to add item to cart')
       }
@@ -140,7 +152,7 @@ export const useCart = () => {
       const user = getCurrentUser()
       const userId = getUserId(user)
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/update`, {
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +185,7 @@ export const useCart = () => {
       const user = getCurrentUser()
       const userId = getUserId(user)
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/remove`, {
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/remove`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -205,7 +217,7 @@ export const useCart = () => {
       const user = getCurrentUser()
       const userId = getUserId(user)
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/clear`, {
+      const response = await fetch(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/clear`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

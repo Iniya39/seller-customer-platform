@@ -13,7 +13,7 @@ export default function EditItem() {
     stockStatus: "in_stock",
     price: 0,
     discountedPrice: 0,
-    tax: 0,
+    taxPercentage: 0,
     photo: "",
     category: "",
     productId: "",
@@ -32,7 +32,7 @@ export default function EditItem() {
   // Fetch categories from API
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/categories`);
+      const response = await axios.get(`₹{import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/categories`);
       setCategories(response.data.categories || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -227,7 +227,7 @@ export default function EditItem() {
       for (let i = 0; i < variants.length; i++) {
         const variant = variants[i];
         if (variant.price <= 0) {
-          alert(`Please enter a valid price for variant ${i + 1}`);
+          alert(`Please enter a valid price for variant ₹{i + 1}`);
           return;
         }
       }
@@ -597,7 +597,7 @@ export default function EditItem() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                           <div>
                             <h6 style={{ margin: 0, fontSize: "0.9rem", color: "white" }}>
-                              {Object.entries(variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                              {Object.entries(variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
                             </h6>
                           </div>
                         </div>
@@ -605,7 +605,7 @@ export default function EditItem() {
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: "1rem" }}>
                           <div>
                             <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
-                              Price ($) *
+                              Price (₹) *
                             </label>
                             <input
                               type="number"
@@ -623,30 +623,12 @@ export default function EditItem() {
                           </div>
                           <div>
                             <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
-                              Discounted Price ($)
+                              Discounted Price (₹)
                             </label>
                             <input
                               type="number"
                               value={variant.discountedPrice}
                               onChange={(e) => updateVariant(index, 'discountedPrice', parseFloat(e.target.value) || 0)}
-                              step="0.01"
-                              style={{
-                                width: "100%",
-                                padding: "0.5rem",
-                                borderRadius: "4px",
-                                border: "1px solid #ccc",
-                                fontSize: "0.9rem"
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
-                              Tax ($)
-                            </label>
-                            <input
-                              type="number"
-                              value={variant.tax || 0}
-                              onChange={(e) => updateVariant(index, 'tax', parseFloat(e.target.value) || 0)}
                               step="0.01"
                               style={{
                                 width: "100%",
@@ -707,6 +689,40 @@ export default function EditItem() {
             </div>
           )}
 
+          {/* Tax Percentage for Products with Variants */}
+          {item.hasVariations && (
+            <div style={{ 
+              padding: "1rem", 
+              backgroundColor: "#1e293b", 
+              borderRadius: "8px", 
+              marginBottom: "1rem" 
+            }}>
+              <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.1rem", color: "white" }}>
+                Tax Percentage
+              </h3>
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Tax Percentage (%):</label>
+                <input 
+                  type="number" 
+                  name="taxPercentage" 
+                  value={item.taxPercentage || 0} 
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    fontSize: "1rem"
+                  }}
+                  placeholder="Enter tax percentage"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Price and Stock - Only show if no variations */}
           {!item.hasVariations && (
             <>
@@ -746,13 +762,15 @@ export default function EditItem() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Tax Amount ($):</label>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Tax Percentage (%):</label>
                   <input 
                     type="number" 
-                    name="tax" 
-                    value={item.tax || 0} 
+                    name="taxPercentage" 
+                    value={item.taxPercentage || 0} 
                     onChange={handleChange}
                     step="0.01"
+                    min="0"
+                    max="100"
                     style={{
                       width: "100%",
                       padding: "0.75rem",

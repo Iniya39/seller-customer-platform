@@ -55,7 +55,7 @@ export default function ProductPage() {
       <ul style={{ marginTop: "2rem" }}>
         {products.map((p) => (
           <li key={p._id}>
-            {p.name} - ${p.price}
+            {p.name} - ₹{p.price}
           </li>
         ))}
       </ul>

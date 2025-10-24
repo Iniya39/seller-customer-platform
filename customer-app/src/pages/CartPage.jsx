@@ -13,6 +13,24 @@ export default function CartPage() {
   const [pendingCheckout, setPendingCheckout] = useState(false)
   const { cart, loading, fetchCart, updateCartItem, removeFromCart, clearCart } = useCart()
 
+  const calculateTax = (items) => {
+    return items.reduce((sum, item) => {
+      const unit = item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price
+      const taxPercentage = item.product?.taxPercentage || 0
+      return sum + (unit * item.quantity * taxPercentage / 100)
+    }, 0)
+  }
+
+  const calculateTotalWithTax = (items) => {
+    return items.reduce((sum, item) => {
+      const unit = item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price
+      const taxPercentage = item.product?.taxPercentage || 0
+      const itemTotal = unit * item.quantity
+      const taxAmount = itemTotal * taxPercentage / 100
+      return sum + itemTotal + taxAmount
+    }, 0)
+  }
+
 
   // Handle checkout process
   const handleCheckout = () => {
@@ -102,10 +120,10 @@ export default function CartPage() {
     const result = await updateCartItem(productId, newQuantity)
     
     if (result.success) {
-      setMessage(`✅ ${result.message}`)
+      setMessage(`✅ ₹{result.message}`)
       setTimeout(() => setMessage(''), 3000)
     } else {
-      setMessage(`❌ ${result.message}`)
+      setMessage(`❌ ₹{result.message}`)
       setTimeout(() => setMessage(''), 3000)
     }
   }
@@ -115,10 +133,10 @@ export default function CartPage() {
     const result = await removeFromCart(productId)
     
     if (result.success) {
-      setMessage(`✅ ${result.message}`)
+      setMessage(`✅ ₹{result.message}`)
       setTimeout(() => setMessage(''), 3000)
     } else {
-      setMessage(`❌ ${result.message}`)
+      setMessage(`❌ ₹{result.message}`)
       setTimeout(() => setMessage(''), 3000)
     }
   }
@@ -128,10 +146,10 @@ export default function CartPage() {
     const result = await clearCart()
     
     if (result.success) {
-      setMessage(`✅ ${result.message}`)
+      setMessage(`✅ ₹{result.message}`)
       setTimeout(() => setMessage(''), 3000)
     } else {
-      setMessage(`❌ ${result.message}`)
+      setMessage(`❌ ₹{result.message}`)
       setTimeout(() => setMessage(''), 3000)
     }
   }
@@ -306,7 +324,7 @@ export default function CartPage() {
                             borderRadius: '4px',
                             display: 'inline-block'
                           }}>
-                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                            {Object.entries(item.variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
                           </div>
                         )}
                         
@@ -319,7 +337,7 @@ export default function CartPage() {
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ marginBottom: '0.5rem' }}>
                           <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#059669' }}>
-                            ${displayPrice}
+                            ₹{displayPrice}
                           </span>
                           {item.discountedPrice && item.discountedPrice < item.price && (
                             <span style={{ 
@@ -328,7 +346,7 @@ export default function CartPage() {
                               textDecoration: 'line-through',
                               marginLeft: '0.5rem'
                             }}>
-                              ${item.price}
+                              ₹{item.price}
                             </span>
                           )}
                         </div>
@@ -391,7 +409,7 @@ export default function CartPage() {
                         </div>
 
                         <div style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>
-                          ${itemTotal.toFixed(2)}
+                          ₹{itemTotal.toFixed(2)}
                         </div>
                       </div>
 
@@ -467,7 +485,7 @@ export default function CartPage() {
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <span>Items ({cartItems.length})</span>
-                    <span>${totalAmount.toFixed(2)}</span>
+                    <span>₹{totalAmount.toFixed(2)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <span>Shipping</span>
@@ -475,12 +493,12 @@ export default function CartPage() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <span>Tax</span>
-                    <span>$0.00</span>
+                    <span>₹{calculateTax(cartItems).toFixed(2)}</span>
                   </div>
                   <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '1rem 0' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: '600', color: '#0f172a' }}>
                     <span>Total</span>
-                    <span>${totalAmount.toFixed(2)}</span>
+                    <span>₹{calculateTotalWithTax(cartItems).toFixed(2)}</span>
                   </div>
                 </div>
 
