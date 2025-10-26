@@ -21,9 +21,10 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [unreadAcceptedCount, setUnreadAcceptedCount] = useState(0)
+  const [unreadCancelledCount, setUnreadCancelledCount] = useState(0)
   const { cartItemCount, fetchCartCount } = useCart()
 
-  // Fetch unread accepted orders count
+  // Fetch unread accepted and cancelled orders count
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
@@ -36,11 +37,19 @@ export default function Dashboard() {
           const orders = data.orders || []
           
           // Count orders that have been accepted but not viewed by customer
-          const unreadCount = orders.filter(order => 
-            order.status === 'accepted' && !order.viewedByCustomer
+          // Only count orders that have acceptance date (newly accepted)
+          const acceptedCount = orders.filter(order => 
+            order.status === 'accepted' && order.acceptedAt && !order.viewedByCustomer
           ).length
           
-          setUnreadAcceptedCount(unreadCount)
+          // Count orders that have been cancelled but not viewed by customer
+          // Only count orders that have cancellation date (newly cancelled)
+          const cancelledCount = orders.filter(order => 
+            order.status === 'cancelled' && order.cancelledAt && !order.viewedByCustomer
+          ).length
+          
+          setUnreadAcceptedCount(acceptedCount)
+          setUnreadCancelledCount(cancelledCount)
         }
       } catch (error) {
         console.error('Error fetching unread order count:', error)
@@ -48,9 +57,29 @@ export default function Dashboard() {
     }
 
     fetchUnreadCount()
+    
     // Refresh count every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000)
-    return () => clearInterval(interval)
+    
+    // Refresh count when page becomes visible (user comes back to dashboard)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchUnreadCount()
+      }
+    }
+    
+    const handleFocus = () => {
+      fetchUnreadCount()
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   // Handle search functionality
@@ -135,11 +164,12 @@ export default function Dashboard() {
           <button 
             style={{ ...cardButtonStyle, position: 'relative' }}
             onClick={() => {
-              // Mark all accepted orders as viewed
+              // Mark all accepted and cancelled orders as viewed
               fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders/customer/${getUserId(getCurrentUser())}/mark-viewed`, {
                 method: 'PUT'
               }).catch(console.error)
               setUnreadAcceptedCount(0)
+              setUnreadCancelledCount(0)
               navigate('/orders')
             }}
           >
@@ -148,7 +178,7 @@ export default function Dashboard() {
               <span style={{
                 position: 'absolute',
                 top: '-8px',
-                right: '-8px',
+                right: unreadCancelledCount > 0 ? '-35px' : '-8px',
                 background: '#10b981',
                 color: 'white',
                 borderRadius: '50%',
@@ -163,6 +193,27 @@ export default function Dashboard() {
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
               }}>
                 {unreadAcceptedCount > 9 ? '9+' : unreadAcceptedCount}
+              </span>
+            )}
+            {unreadCancelledCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                background: '#ef4444',
+                color: 'white',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                border: '2px solid white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}>
+                {unreadCancelledCount > 9 ? '9+' : unreadCancelledCount}
               </span>
             )}
           </button>

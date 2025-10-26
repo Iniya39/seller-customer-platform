@@ -6,6 +6,7 @@ export default function BuyNowPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [product, setProduct] = useState(null)
+  const [selectedVariant, setSelectedVariant] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -16,8 +17,18 @@ export default function BuyNowPage() {
   useEffect(() => {
     // Get product data from navigation state
     const productData = location.state?.product
+    const variantData = location.state?.selectedVariant
+    
     if (productData) {
       setProduct(productData)
+      
+      // Set selected variant if provided
+      if (variantData) {
+        setSelectedVariant(variantData)
+      } else if (productData.hasVariations && productData.variants && productData.variants.length > 0) {
+        // If product has variations but no variant selected, use first variant
+        setSelectedVariant(productData.variants[0])
+      }
     } else {
       // Redirect to products if no product data
       navigate('/products')
@@ -107,9 +118,25 @@ export default function BuyNowPage() {
       }
     }
     
-    const displayPrice = product.discountedPrice && product.discountedPrice < product.price 
-      ? product.discountedPrice 
-      : product.price
+    // Calculate price based on variant if applicable
+    let displayPrice, itemPrice, itemDiscountedPrice
+    
+    if (product.hasVariations && selectedVariant) {
+      // Product has variations, use variant pricing
+      itemPrice = selectedVariant.price
+      itemDiscountedPrice = selectedVariant.discountedPrice
+      displayPrice = itemDiscountedPrice && itemDiscountedPrice < itemPrice 
+        ? itemDiscountedPrice 
+        : itemPrice
+    } else {
+      // Product without variations
+      itemPrice = product.price
+      itemDiscountedPrice = product.discountedPrice
+      displayPrice = itemDiscountedPrice && itemDiscountedPrice < itemPrice 
+        ? itemDiscountedPrice 
+        : itemPrice
+    }
+    
     const totalAmount = displayPrice * quantity
 
     const orderData = {
@@ -128,8 +155,14 @@ export default function BuyNowPage() {
         items: [{
           product: product,
           quantity: quantity,
-          price: product.price,
-          discountedPrice: product.discountedPrice
+          price: itemPrice,
+          discountedPrice: itemDiscountedPrice,
+          variant: selectedVariant ? {
+            combination: selectedVariant.combination,
+            price: selectedVariant.price,
+            originalPrice: selectedVariant.originalPrice,
+            stock: selectedVariant.stock
+          } : null
         }]
       },
       totalAmount: totalAmount,
@@ -189,13 +222,37 @@ export default function BuyNowPage() {
     )
   }
 
-  const displayPrice = product.discountedPrice && product.discountedPrice < product.price 
-    ? product.discountedPrice 
-    : product.price
+  // Calculate price based on variant if applicable
+  let displayPrice, itemPrice, itemDiscountedPrice, savings
+  
+  if (product.hasVariations && selectedVariant) {
+    // Product has variations, use variant pricing
+    itemPrice = selectedVariant.price
+    itemDiscountedPrice = selectedVariant.discountedPrice
+    displayPrice = itemDiscountedPrice && itemDiscountedPrice < itemPrice 
+      ? itemDiscountedPrice 
+      : itemPrice
+    savings = itemDiscountedPrice && itemDiscountedPrice < itemPrice 
+      ? (itemPrice - itemDiscountedPrice) * quantity 
+      : 0
+  } else {
+    // Product without variations
+    itemPrice = product.price
+    itemDiscountedPrice = product.discountedPrice
+    displayPrice = itemDiscountedPrice && itemDiscountedPrice < itemPrice 
+      ? itemDiscountedPrice 
+      : itemPrice
+    savings = itemDiscountedPrice && itemDiscountedPrice < itemPrice 
+      ? (itemPrice - itemDiscountedPrice) * quantity 
+      : 0
+  }
+  
   const totalAmount = displayPrice * quantity
-  const savings = product.discountedPrice && product.discountedPrice < product.price 
-    ? (product.price - product.discountedPrice) * quantity 
-    : 0
+  
+  // Check if product/variant is out of stock
+  const isOutOfStock = product.hasVariations && selectedVariant 
+    ? selectedVariant.stock === 'out_of_stock'
+    : product.stockStatus === 'out_of_stock'
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
@@ -282,14 +339,14 @@ export default function BuyNowPage() {
                   <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#059669' }}>
                     ₹{displayPrice}
                   </span>
-                  {product.discountedPrice && product.discountedPrice < product.price && (
+                  {itemDiscountedPrice && itemDiscountedPrice < itemPrice && (
                     <>
                       <span style={{ 
                         fontSize: '1rem', 
                         color: '#64748b', 
                         textDecoration: 'line-through'
                       }}>
-                        ₹{product.price}
+                        ₹{itemPrice}
                       </span>
                       <span style={{
                         fontSize: '0.75rem',
@@ -299,13 +356,72 @@ export default function BuyNowPage() {
                         borderRadius: '4px',
                         fontWeight: '500'
                       }}>
-                        Save ₹{(product.price - product.discountedPrice).toFixed(2)}
+                        Save ₹{(itemPrice - itemDiscountedPrice).toFixed(2)}
                       </span>
                     </>
                   )}
                 </div>
               </div>
             </div>
+            
+            {/* Variant Selection */}
+            {product.hasVariations && product.variants && product.variants.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem', color: '#374151' }}>
+                  Select Variant:
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {product.variants.map((variant, index) => {
+                    // Check if this variant matches the selected variant by comparing combination
+                    const isSelected = selectedVariant && variant.combination && selectedVariant.combination
+                      ? Object.keys(variant.combination).every(key => 
+                          variant.combination[key] === selectedVariant.combination[key]
+                        )
+                      : false
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setSelectedVariant(variant)
+                          // Reset quantity to 1 when variant changes
+                          setQuantity(1)
+                        }}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          borderRadius: '6px',
+                          border: `2px solid ${isSelected ? '#059669' : '#d1d5db'}`,
+                          background: isSelected ? '#f0fdf4' : 'white',
+                          color: isSelected ? '#059669' : '#374151',
+                          fontSize: '0.875rem',
+                          fontWeight: isSelected ? '600' : '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.target.style.borderColor = '#059669'
+                            e.target.style.color = '#059669'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.target.style.borderColor = '#d1d5db'
+                            e.target.style.color = '#374151'
+                          }
+                        }}
+                      >
+                        {variant.combination && typeof variant.combination === 'object' 
+                          ? Object.entries(variant.combination).map(([key, value]) => `${value}`).join(', ')
+                          : 'Variant ' + (index + 1)
+                        }
+                        {' - ₹'}{variant.discountedPrice && variant.discountedPrice < variant.price ? variant.discountedPrice : variant.price}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quantity Selection */}
@@ -523,26 +639,32 @@ export default function BuyNowPage() {
             
             <button
               onClick={handleProceedToOrderSummary}
+              disabled={isOutOfStock}
               style={{
                 flex: 2,
                 padding: '1rem',
                 borderRadius: '8px',
                 border: 'none',
-                background: '#059669',
+                background: isOutOfStock ? '#9ca3af' : '#059669',
                 color: 'white',
                 fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: isOutOfStock ? 0.6 : 1
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#047857'
+                if (!isOutOfStock) {
+                  e.target.style.background = '#047857'
+                }
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = '#059669'
+                if (!isOutOfStock) {
+                  e.target.style.background = '#059669'
+                }
               }}
             >
-              Proceed to Order Summary
+              {isOutOfStock ? 'Out of Stock' : 'Proceed to Order Summary'}
             </button>
           </div>
         </div>

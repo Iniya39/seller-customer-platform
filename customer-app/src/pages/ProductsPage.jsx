@@ -194,6 +194,26 @@ export default function ProductsPage() {
   // Handle Buy Now
   const handleBuyNow = async (product) => {
     try {
+      // Check if product is out of stock
+      const isOutOfStock = product.hasVariations && selectedVariant 
+        ? selectedVariant.stock === 'out_of_stock'
+        : product.stockStatus === 'out_of_stock'
+      
+      if (isOutOfStock) {
+        setCartMessage('❌ This product is out of stock')
+        setTimeout(() => setCartMessage(''), 3000)
+        return
+      }
+
+      // Check if product has variations and a variant is selected
+      if (product.hasVariations && product.variants && product.variants.length > 0) {
+        if (!selectedVariant) {
+          setCartMessage('Please select a variant before buying')
+          setTimeout(() => setCartMessage(''), 3000)
+          return
+        }
+      }
+
       const user = getCurrentUser()
       if (!user) {
         setCartMessage('Please log in to proceed with purchase')
@@ -208,8 +228,8 @@ export default function ProductsPage() {
         return
       }
 
-      // Navigate to Buy Now page with product data
-      navigate('/buy-now', { state: { product } })
+      // Navigate to Buy Now page with product data and selected variant
+      navigate('/buy-now', { state: { product, selectedVariant } })
     } catch (error) {
       setCartMessage('❌ Failed to proceed with purchase')
       setTimeout(() => setCartMessage(''), 3000)
@@ -843,65 +863,87 @@ export default function ProductsPage() {
 
 
                 {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button 
-                    onClick={() => handleAddToCart(selectedProduct)}
-                    style={{
-                      flex: 1,
-                      padding: '1rem 2rem',
-                      borderRadius: '8px',
-                      border: '2px solid #3b82f6',
-                      background: 'white',
-                      color: '#3b82f6',
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#3b82f6';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'white';
-                      e.target.style.color = '#3b82f6';
-                    }}
-                  >
-                    🛒 Add to Cart
-                  </button>
+                {(() => {
+                  // Check if product/variant is out of stock
+                  const isOutOfStock = selectedProduct.hasVariations && selectedVariant 
+                    ? selectedVariant.stock === 'out_of_stock'
+                    : selectedProduct.stockStatus === 'out_of_stock'
                   
-                  <button 
-                    onClick={() => handleBuyNow(selectedProduct)}
-                    style={{
-                      flex: 1,
-                      padding: '1rem 2rem',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: '#059669',
-                      color: 'white',
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#047857';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#059669';
-                    }}
-                  >
-                    🛍️ Buy Now
-                  </button>
-                </div>
+                  return (
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button 
+                        onClick={() => handleAddToCart(selectedProduct)}
+                        disabled={isOutOfStock}
+                        style={{
+                          flex: 1,
+                          padding: '1rem 2rem',
+                          borderRadius: '8px',
+                          border: '2px solid',
+                          borderColor: isOutOfStock ? '#d1d5db' : '#3b82f6',
+                          background: isOutOfStock ? '#f3f4f6' : 'white',
+                          color: isOutOfStock ? '#9ca3af' : '#3b82f6',
+                          fontSize: '1.1rem',
+                          fontWeight: '600',
+                          cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          opacity: isOutOfStock ? 0.6 : 1
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isOutOfStock) {
+                            e.target.style.background = '#3b82f6';
+                            e.target.style.color = 'white';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isOutOfStock) {
+                            e.target.style.background = 'white';
+                            e.target.style.color = '#3b82f6';
+                          }
+                        }}
+                      >
+                        {isOutOfStock ? '❌ Out of Stock' : '🛒 Add to Cart'}
+                      </button>
+                      
+                      <button 
+                        onClick={() => handleBuyNow(selectedProduct)}
+                        disabled={isOutOfStock}
+                        style={{
+                          flex: 1,
+                          padding: '1rem 2rem',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: isOutOfStock ? '#9ca3af' : '#059669',
+                          color: 'white',
+                          fontSize: '1.1rem',
+                          fontWeight: '600',
+                          cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          opacity: isOutOfStock ? 0.6 : 1
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isOutOfStock) {
+                            e.target.style.background = '#047857';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isOutOfStock) {
+                            e.target.style.background = '#059669';
+                          }
+                        }}
+                      >
+                        {isOutOfStock ? '❌ Out of Stock' : '🛍️ Buy Now'}
+                      </button>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           </div>

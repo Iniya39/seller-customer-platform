@@ -173,6 +173,9 @@ export const updateOrderStatus = async (req, res) => {
       order.deliveryStatus = 'pending';
       order.acceptedAt = new Date(); // Track when order was accepted
       order.viewedByCustomer = false; // Mark as unviewed by customer
+    } else if (status === 'cancelled') {
+      order.cancelledAt = new Date(); // Track when order was cancelled
+      order.viewedByCustomer = false; // Mark as unviewed by customer
     } else if (status === 'shipped') {
       order.deliveryStatus = 'shipped';
     } else if (status === 'delivered') {
@@ -278,12 +281,14 @@ export const markOrdersAsViewed = async (req, res) => {
   try {
     const { customerId } = req.params;
 
-    // Update all accepted orders for this customer to viewed
+    // Update all accepted and cancelled orders (with dates) for this customer to viewed
     await Order.updateMany(
       { 
         customer: customerId,
-        status: 'accepted',
-        viewedByCustomer: false
+        $or: [
+          { status: 'accepted', acceptedAt: { $exists: true }, viewedByCustomer: false },
+          { status: 'cancelled', cancelledAt: { $exists: true }, viewedByCustomer: false }
+        ]
       },
       { 
         viewedByCustomer: true

@@ -100,6 +100,9 @@ const orderSchema = new mongoose.Schema({
   acceptedAt: {
     type: Date
   },
+  cancelledAt: {
+    type: Date
+  },
   viewedByCustomer: {
     type: Boolean,
     default: false

@@ -29,6 +29,26 @@ export default function OrdersPage() {
       if (response.ok) {
         const data = await response.json()
         setOrders(data.orders || [])
+        
+        // Mark all accepted and cancelled orders with acceptance/cancellation dates as viewed when page loads
+        try {
+          const ordersData = data.orders || []
+          
+          // Only mark orders as viewed if they have been accepted or cancelled AND have acceptance/cancellation dates
+          const hasUnviewedOrders = ordersData.some(order => 
+            (order.status === 'accepted' && order.acceptedAt && !order.viewedByCustomer) ||
+            (order.status === 'cancelled' && order.cancelledAt && !order.viewedByCustomer)
+          )
+          
+          if (hasUnviewedOrders) {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders/customer/${userId}/mark-viewed`, {
+              method: 'PUT'
+            })
+            console.log('Marked orders as viewed')
+          }
+        } catch (error) {
+          console.error('Error marking orders as viewed:', error)
+        }
       } else {
         console.error('Failed to fetch orders')
       }
@@ -281,6 +301,45 @@ export default function OrdersPage() {
                       </div>
                       <div style={{ fontSize: '0.875rem', color: '#047857' }}>
                         Your order #{order.orderId} has been accepted and will be processed soon.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Seller Cancelled Notification */}
+                {order.status === 'cancelled' && order.cancelledAt && !order.viewedByCustomer && (
+                  <div style={{
+                    padding: '0.75rem 1rem',
+                    marginBottom: '1rem',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+                    border: '2px solid #ef4444',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)'
+                  }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: '#ef4444',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.2rem',
+                      fontWeight: '700',
+                      flexShrink: 0
+                    }}>
+                      ✕
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '700', color: '#7f1d1d', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                        Order Cancelled by Seller
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: '#991b1b' }}>
+                        Your order #{order.orderId} has been cancelled. Please contact support if you have questions.
                       </div>
                     </div>
                   </div>
