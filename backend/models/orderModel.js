@@ -97,6 +97,13 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  acceptedAt: {
+    type: Date
+  },
+  viewedByCustomer: {
+    type: Boolean,
+    default: false
+  },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'shipped', 'delivered', 'cancelled'],

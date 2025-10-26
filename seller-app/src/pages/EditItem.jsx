@@ -28,6 +28,8 @@ export default function EditItem() {
   const [categories, setCategories] = useState([]);
   const [attributes, setAttributes] = useState([]);
   const [variants, setVariants] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [photoFiles, setPhotoFiles] = useState([]);
 
 
   // Fetch categories from API
@@ -60,6 +62,12 @@ export default function EditItem() {
         }
         if (productData.variants) {
           setVariants(productData.variants);
+        }
+        // Set photos if they exist
+        if (productData.photos && productData.photos.length > 0) {
+          setPhotos(productData.photos);
+        } else if (productData.photo) {
+          setPhotos([productData.photo]);
         }
         setLoading(false);
       })
@@ -238,21 +246,58 @@ export default function EditItem() {
     setError("");
 
     try {
-      // Include attributes and variants in the item data
-      const itemToSave = {
-        ...item,
-        attributes: item.hasVariations ? attributes : [],
-        variants: item.hasVariations ? variants : []
-      };
-
-      const response = await updateProduct(id, itemToSave);
+      // Build FormData for multipart upload with multiple photos
+      const formData = new FormData();
       
-      if (response.message) {
+      // Add basic product fields
+      formData.append('productId', item.productId);
+      formData.append('name', item.name);
+      formData.append('unit', item.unit || 'piece');
+      formData.append('description', item.description);
+      formData.append('category', item.category);
+      formData.append('hasVariations', item.hasVariations);
+      
+      // Add attributes and variants based on hasVariations
+      formData.append('attributes', JSON.stringify(item.hasVariations ? attributes : []));
+      formData.append('variants', JSON.stringify(item.hasVariations ? variants : []));
+      
+      // Add price/stock fields only if no variations
+      if (!item.hasVariations) {
+        formData.append('price', item.price || 0);
+        if (item.discountedPrice !== undefined && item.discountedPrice !== null) {
+          formData.append('discountedPrice', item.discountedPrice);
+        }
+        formData.append('stockStatus', item.stockStatus || 'in_stock');
+      }
+      
+      // Add tax percentage
+      if (item.taxPercentage !== undefined) {
+        formData.append('taxPercentage', item.taxPercentage);
+      }
+      
+      // Append multiple photo files if any new files added
+      photoFiles.forEach((file) => {
+        formData.append('photos', file);
+      });
+      
+      // Also append existing photos URLs that haven't been changed
+      // Get photos that are URLs (strings, not File objects)
+      const existingPhotoUrls = photos.filter(photo => typeof photo === 'string' && photo.startsWith('http'));
+      existingPhotoUrls.forEach((url) => {
+        formData.append('existingPhotos', url);
+      });
+      
+      const response = await axios.put(`http://localhost:5000/api/products/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      if (response.data) {
         alert("Product updated successfully!");
         navigate("/");
       }
     } catch (err) {
       console.error("Error updating product:", err);
+      alert("Failed to update product: " + (err.response?.data?.error || err.message));
       setError(err.message || "Failed to update product");
     } finally {
       setSaving(false);
@@ -834,33 +879,92 @@ export default function EditItem() {
             </>
           )}
 
-          {/* Product Photo */}
+          {/* Multiple Product Photos */}
           <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Product Photo:</label>
-            <input 
-              type="file" 
-              name="photoFile" 
-              accept="image/*"
-              onChange={handleChange}
+            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+              Product Photos
+            </label>
+            
+            {/* Display uploaded photos */}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+              {photos.map((photo, index) => (
+                <div key={index} style={{ position: 'relative' }}>
+                  <img 
+                    src={photo} 
+                    alt={`Product ${index + 1}`}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      objectFit: 'cover',
+                      borderRadius: '6px',
+                      border: '1px solid #ccc'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newPhotos = photos.filter((_, i) => i !== index);
+                      const newPhotoFiles = photoFiles.filter((_, i) => i !== index);
+                      setPhotos(newPhotos);
+                      setPhotoFiles(newPhotoFiles);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '-5px',
+                      right: '-5px',
+                      background: '#dc2626',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add photo button */}
+            <label
+              htmlFor="photo-upload-edit"
               style={{
-                width: "100%",
-                padding: "0.5rem",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                fontSize: "1rem",
-                background: "white"
+                display: 'inline-block',
+                padding: '0.75rem 1.5rem',
+                background: '#059669',
+                color: 'white',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: '600'
+              }}
+            >
+              + Add Photo
+            </label>
+            <input
+              id="photo-upload-edit"
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    setPhotos([...photos, e.target?.result]);
+                    setPhotoFiles([...photoFiles, file]);
+                  };
+                  reader.readAsDataURL(file);
+                }
+                e.target.value = '';
               }}
             />
-            {item.photoFile && (
-              <div style={{ marginTop: "0.5rem", color: "#555", fontSize: "0.9rem" }}>
-                Selected: <span style={{ fontWeight: 600 }}>{item.photoFile.name}</span>
-              </div>
-            )}
-            {!item.photoFile && item.photo && (
-              <div style={{ marginTop: "0.5rem", color: "#555", fontSize: "0.9rem" }}>
-                Current photo will remain unchanged unless a new file is selected.
-              </div>
-            )}
           </div>
         </div>
         

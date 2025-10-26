@@ -171,6 +171,8 @@ export const updateOrderStatus = async (req, res) => {
     // Update delivery status based on order status
     if (status === 'accepted') {
       order.deliveryStatus = 'pending';
+      order.acceptedAt = new Date(); // Track when order was accepted
+      order.viewedByCustomer = false; // Mark as unviewed by customer
     } else if (status === 'shipped') {
       order.deliveryStatus = 'shipped';
     } else if (status === 'delivered') {
@@ -267,6 +269,32 @@ export const getAllOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching orders:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Mark customer orders as viewed
+export const markOrdersAsViewed = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+
+    // Update all accepted orders for this customer to viewed
+    await Order.updateMany(
+      { 
+        customer: customerId,
+        status: 'accepted',
+        viewedByCustomer: false
+      },
+      { 
+        viewedByCustomer: true
+      }
+    );
+
+    res.status(200).json({
+      message: 'Orders marked as viewed'
+    });
+  } catch (error) {
+    console.error('Error marking orders as viewed:', error);
     res.status(500).json({ error: error.message });
   }
 };

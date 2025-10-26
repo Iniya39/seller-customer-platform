@@ -16,7 +16,35 @@ export default function ProductsPage() {
   const [quantity, setQuantity] = useState(1)
   const [selectedVariant, setSelectedVariant] = useState(null)
   const [selectedAttributes, setSelectedAttributes] = useState({})
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [touchStart, setTouchStart] = useState(null)
+  const [touchEnd, setTouchEnd] = useState(null)
   const { cartItemCount, fetchCartCount, addToCart: addToCartHook } = useCart()
+  
+  // Touch handlers for swipe functionality
+  const handleTouchStart = (e) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+  
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+  
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > 50
+    const isRightSwipe = distance < -50
+    
+    if (isLeftSwipe && selectedProduct.photos) {
+      setCurrentImageIndex(prev => prev < selectedProduct.photos.length - 1 ? prev + 1 : 0)
+    }
+    if (isRightSwipe && selectedProduct.photos) {
+      setCurrentImageIndex(prev => prev > 0 ? prev - 1 : selectedProduct.photos.length - 1)
+    }
+  }
 
   // Fetch categories from API
   const fetchCategories = async () => {
@@ -301,14 +329,17 @@ export default function ProductsPage() {
                   gap: '1.5rem' 
                 }}>
                   {categoryProducts.map(product => (
-                    <ProductCard 
-                      key={product._id} 
-                      product={product} 
-                      onClick={() => {
-                        setSelectedProduct(product)
-                        setQuantity(1) // Reset quantity when selecting a new product
-                      }}
-                    />
+                      <ProductCard 
+                        key={product._id} 
+                        product={product} 
+                        onClick={() => {
+                          setSelectedProduct(product)
+                          setQuantity(1) // Reset quantity when selecting a new product
+                          setCurrentImageIndex(0) // Reset to first image
+                          setSelectedVariant(null) // Reset variant selection
+                          setSelectedAttributes({}) // Reset attribute selection
+                        }}
+                      />
                   ))}
                 </div>
               </div>
@@ -373,9 +404,123 @@ export default function ProductsPage() {
 
             {/* Product Details */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
-              {/* Product Image */}
+              {/* Product Images */}
               <div>
-                {selectedProduct.photo && (
+                {selectedProduct.photos && selectedProduct.photos.length > 0 ? (
+                  <div>
+                    {/* Main Image with Swipe Indicators */}
+                    <div style={{ position: 'relative' }}>
+                      <img 
+                        src={selectedProduct.photos[currentImageIndex]} 
+                        alt={selectedProduct.name}
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          marginBottom: '1rem',
+                          userSelect: 'none'
+                        }}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                      />
+                      
+                      {/* Navigation Buttons */}
+                      {selectedProduct.photos.length > 1 && (
+                        <>
+                          <button
+                            onClick={() => setCurrentImageIndex(prev => prev > 0 ? prev - 1 : selectedProduct.photos.length - 1)}
+                            style={{
+                              position: 'absolute',
+                              left: '10px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'rgba(0,0,0,0.6)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '40px',
+                              height: '40px',
+                              cursor: 'pointer',
+                              fontSize: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 10
+                            }}
+                          >
+                            ‹
+                          </button>
+                          <button
+                            onClick={() => setCurrentImageIndex(prev => prev < selectedProduct.photos.length - 1 ? prev + 1 : 0)}
+                            style={{
+                              position: 'absolute',
+                              right: '10px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'rgba(0,0,0,0.6)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '40px',
+                              height: '40px',
+                              cursor: 'pointer',
+                              fontSize: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 10
+                            }}
+                          >
+                            ›
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Image Counter */}
+                      {selectedProduct.photos.length > 1 && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '1rem',
+                          right: '1rem',
+                          background: 'rgba(0,0,0,0.6)',
+                          color: 'white',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '12px',
+                          fontSize: '0.875rem',
+                          fontWeight: '500'
+                        }}>
+                          {currentImageIndex + 1} / {selectedProduct.photos.length}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Thumbnail Gallery - Click to view */}
+                    {selectedProduct.photos.length > 1 && (
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {selectedProduct.photos.map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`${selectedProduct.name} ${index + 1}`}
+                            onClick={() => setCurrentImageIndex(index)}
+                            style={{
+                              width: '80px',
+                              height: '80px',
+                              objectFit: 'cover',
+                              borderRadius: '8px',
+                              border: currentImageIndex === index ? '2px solid #059669' : '1px solid #e2e8f0',
+                              cursor: 'pointer',
+                              opacity: currentImageIndex === index ? 1 : 0.7,
+                              transition: 'all 0.2s ease'
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : selectedProduct.photo && (
                   <img 
                     src={selectedProduct.photo} 
                     alt={selectedProduct.name}
@@ -856,7 +1001,10 @@ function ProductCard({ product, onClick }) {
           borderRadius: '4px',
           display: 'inline-block'
         }}>
-          Has Variations
+          {product.attributes.length === 1 
+            ? `Available in different ${product.attributes[0].name}s`
+            : `Available in different ${product.attributes.map(attr => attr.name).join(', ')}`
+          }
         </div>
       )}
       
@@ -910,16 +1058,6 @@ function ProductCard({ product, onClick }) {
                 marginTop: '0.25rem'
               }}>
                 Starting from ₹{displayPrice}
-              </div>
-            )}
-            {product.taxPercentage && product.taxPercentage > 0 && (
-              <div style={{ 
-                fontSize: '0.8rem', 
-                color: '#059669',
-                fontWeight: '500',
-                marginTop: '0.25rem'
-              }}>
-                Final: ₹{((product.discountedPrice || product.price) * (1 + product.taxPercentage / 100)).toFixed(2)} (inc. {product.taxPercentage}% tax)
               </div>
             )}
           </>

@@ -7,6 +7,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [activeFilter, setActiveFilter] = useState('all')
 
   useEffect(() => {
     fetchOrders()
@@ -72,57 +73,160 @@ export default function OrdersPage() {
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
         {/* Header */}
-        <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              padding: '0.5rem 0.75rem',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              background: 'white',
-              color: '#374151',
-              cursor: 'pointer'
-            }}
-          >
-            ← Back
-          </button>
-          <h1 style={{ marginTop: 0, marginBottom: 0, color: '#0f172a' }}>
-            My Orders
-          </h1>
-        </div>
-
-        {orders.length === 0 ? (
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '3rem',
-            textAlign: 'center',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
-            <h2 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>No Orders Yet</h2>
-            <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-              You haven't placed any orders yet. Start shopping to see your orders here!
-            </p>
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
             <button
-              onClick={() => navigate('/products')}
+              onClick={() => navigate(-1)}
               style={{
-                padding: '0.75rem 1.5rem',
+                padding: '0.5rem 0.75rem',
                 borderRadius: '8px',
-                border: 'none',
-                background: '#059669',
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: '600',
+                border: '1px solid #d1d5db',
+                background: 'white',
+                color: '#374151',
                 cursor: 'pointer'
               }}
             >
-              Browse Products
+              ← Back
+            </button>
+            <h1 style={{ marginTop: 0, marginBottom: 0, color: '#0f172a' }}>
+              My Orders
+            </h1>
+          </div>
+
+          {/* Filter Buttons */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveFilter('all')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeFilter === 'all' ? '#059669' : 'white',
+                color: activeFilter === 'all' ? 'white' : '#64748b',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: activeFilter === 'all' ? 'none' : '1px solid #d1d5db',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setActiveFilter('pending')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeFilter === 'pending' ? '#f59e0b' : 'white',
+                color: activeFilter === 'pending' ? 'white' : '#64748b',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: activeFilter === 'pending' ? 'none' : '1px solid #d1d5db',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Pending
+            </button>
+            <button
+              onClick={() => setActiveFilter('accepted')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeFilter === 'accepted' ? '#22c55e' : 'white',
+                color: activeFilter === 'accepted' ? 'white' : '#64748b',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: activeFilter === 'accepted' ? 'none' : '1px solid #d1d5db',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Accepted
+            </button>
+            <button
+              onClick={() => setActiveFilter('cancelled')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeFilter === 'cancelled' ? '#ef4444' : 'white',
+                color: activeFilter === 'cancelled' ? 'white' : '#64748b',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: activeFilter === 'cancelled' ? 'none' : '1px solid #d1d5db',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Cancelled
             </button>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {orders.map(order => (
+        </div>
+
+        {/* Filter and display orders */}
+        {(() => {
+          const filteredOrders = orders.filter(order => {
+            if (activeFilter === 'all') return true
+            return order.status === activeFilter
+          })
+          
+          if (orders.length === 0) {
+            return (
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '3rem',
+                textAlign: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+                <h2 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>No Orders Yet</h2>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                  You haven't placed any orders yet. Start shopping to see your orders here!
+                </p>
+                <button
+                  onClick={() => navigate('/products')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#059669',
+                    color: 'white',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Browse Products
+                </button>
+              </div>
+            )
+          }
+          
+          if (filteredOrders.length === 0) {
+            return (
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '3rem',
+                textAlign: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
+                <h2 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>No {getStatusText(activeFilter)} Orders</h2>
+                <p style={{ color: '#64748b' }}>
+                  You don't have any {getStatusText(activeFilter).toLowerCase()} orders.
+                </p>
+              </div>
+            )
+          }
+          
+          return (
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {filteredOrders.map(order => (
               <div
                 key={order._id}
                 style={{
@@ -143,6 +247,44 @@ export default function OrdersPage() {
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
+                {/* Seller Accepted Notification */}
+                {order.status === 'accepted' && order.acceptedAt && !order.viewedByCustomer && (
+                  <div style={{
+                    padding: '0.75rem 1rem',
+                    marginBottom: '1rem',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                    border: '2px solid #10b981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)'
+                  }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: '#10b981',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.2rem',
+                      fontWeight: '700',
+                      flexShrink: 0
+                    }}>
+                      ✓
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '700', color: '#065f46', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                        🎉 Order Accepted by Seller!
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: '#047857' }}>
+                        Your order #{order.orderId} has been accepted and will be processed soon.
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <div>
                     <h3 style={{ margin: '0 0 0.5rem 0', color: '#0f172a' }}>Order #{order.orderId}</h3>
@@ -233,8 +375,9 @@ export default function OrdersPage() {
                 </button>
               </div>
             ))}
-          </div>
-        )}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Order Details Modal */}

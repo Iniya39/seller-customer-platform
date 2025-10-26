@@ -1,6 +1,23 @@
 import Customer from '../models/customerModel.js';
 import jwt from 'jsonwebtoken';
 
+// Get customer by ID
+const getCustomerById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const customer = await Customer.findById(id);
+    
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    res.json({ customer });
+  } catch (error) {
+    console.error('Error fetching customer:', error);
+    res.status(500).json({ error: 'Failed to fetch customer' });
+  }
+};
+
 // Get all customers for a seller
 const getCustomersBySeller = async (req, res) => {
   try {
@@ -230,6 +247,7 @@ const customerLogin = async (req, res) => {
 };
 
 export {
+  getCustomerById,
   getCustomersBySeller,
   addCustomer,
   updateCustomer,

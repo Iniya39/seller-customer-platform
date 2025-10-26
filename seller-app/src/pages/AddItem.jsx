@@ -31,6 +31,8 @@ export default function AddItem({ user }) {
   const [categories, setCategories] = useState([]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [photos, setPhotos] = useState([]);
+  const [photoFiles, setPhotoFiles] = useState([]);
   const navigate = useNavigate();
 
   // Product templates for each category
@@ -404,10 +406,16 @@ export default function AddItem({ user }) {
       formData.append('seller', productToSave.seller);
       formData.append('sellerName', productToSave.sellerName);
       formData.append('sellerEmail', productToSave.sellerEmail);
+      
+      // Append multiple photos
+      photoFiles.forEach((file) => {
+        formData.append('photos', file);
+      });
+      
+      // Keep backward compatibility with single photo
       if (productToSave.photoFile) {
         formData.append('photo', productToSave.photoFile);
       } else if (productToSave.photo) {
-        // Fallback: URL string
         formData.append('photo', productToSave.photo);
       }
 
@@ -446,6 +454,8 @@ export default function AddItem({ user }) {
     });
     setAttributes([]);
     setVariants([]);
+    setPhotos([]);
+    setPhotoFiles([]);
   };
 
   return (
@@ -1114,29 +1124,92 @@ export default function AddItem({ user }) {
                   </>
                 )}
 
+                {/* Multiple Product Photos */}
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                    Product Photo
+                    Product Photos
+                  </label>
+                  
+                  {/* Display uploaded photos */}
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                    {photos.map((photo, index) => (
+                      <div key={index} style={{ position: 'relative' }}>
+                        <img 
+                          src={photo} 
+                          alt={`Product ${index + 1}`}
+                          style={{
+                            width: '80px',
+                            height: '80px',
+                            objectFit: 'cover',
+                            borderRadius: '6px',
+                            border: '1px solid #ccc'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newPhotos = photos.filter((_, i) => i !== index);
+                            const newPhotoFiles = photoFiles.filter((_, i) => i !== index);
+                            setPhotos(newPhotos);
+                            setPhotoFiles(newPhotoFiles);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '-5px',
+                            right: '-5px',
+                            background: '#dc2626',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add photo button */}
+                  <label
+                    htmlFor="photo-upload"
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.75rem 1.5rem',
+                      background: '#059669',
+                      color: 'white',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: '600'
+                    }}
+                  >
+                    + Add Photo
                   </label>
                   <input
+                    id="photo-upload"
                     type="file"
-                    name="photoFile"
                     accept="image/*"
-                    onChange={handleChange}
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                      fontSize: "1rem",
-                      background: "white"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          setPhotos([...photos, e.target?.result]);
+                          setPhotoFiles([...photoFiles, file]);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                      e.target.value = '';
                     }}
                   />
-                  {productData.photoFile && (
-                    <div style={{ marginTop: "0.5rem", color: "#555", fontSize: "0.9rem" }}>
-                      Selected: <span style={{ fontWeight: 600 }}>{productData.photoFile.name}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 

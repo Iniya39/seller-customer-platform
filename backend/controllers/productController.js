@@ -104,12 +104,28 @@ export const createProduct = async (req, res) => {
       }
     }
 
-    // If file uploaded, construct public URL
-    let photoUrl = undefined;
-    if (req.file) {
-      // Serve via /uploads; path configured in server.js
-      const filename = req.file.filename;
-      photoUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+    // Handle photo uploads - support both single photo (backward compatibility) and multiple photos
+    let photoUrl = null;
+    let photoUrls = [];
+    
+    if (req.files && Object.keys(req.files).length > 0) {
+      // Check if files are named 'photos' (multiple) or 'photo' (single)
+      const photoFiles = req.files.photos || [];
+      const singlePhoto = req.files.photo?.[0];
+      
+      if (photoFiles && photoFiles.length > 0) {
+        // Multiple photos
+        photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+        
+        // Set the first photo as the main photo for backward compatibility
+        if (photoUrls.length > 0) {
+          photoUrl = photoUrls[0];
+        }
+      } else if (singlePhoto) {
+        // Single photo (backward compatibility)
+        photoUrl = `${req.protocol}://${req.get('host')}/uploads/${singlePhoto.filename}`;
+        photoUrls = [photoUrl];
+      }
     }
 
     // Create product data object
@@ -120,6 +136,7 @@ export const createProduct = async (req, res) => {
       description,
       category,
       photo: photoUrl || req.body.photo,
+      photos: photoUrls.length > 0 ? photoUrls : (req.body.photos ? JSON.parse(req.body.photos) : []),
       seller,
       sellerName,
       sellerEmail,
@@ -330,13 +347,42 @@ export const updateProduct = async (req, res) => {
     if (attributes !== undefined) updateData.attributes = parsedAttributes;
     if (variants !== undefined) updateData.variants = parsedVariants;
     
-    // If a new file is uploaded, override photo with the new public URL
-    if (req.file) {
-      const filename = req.file.filename;
-      updateData.photo = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
-    } else if (photo !== undefined) {
-      updateData.photo = photo;
+    // Handle photo uploads - support both single and multiple photos
+    let allPhotos = [];
+    
+    // Get existing product to preserve existing photos
+    const existingProduct = await Product.findById(req.params.id);
+    let existingPhotos = existingProduct?.photos || [];
+    
+    if (req.files && Object.keys(req.files).length > 0) {
+      const photoFiles = req.files.photos || [];
+      const singlePhoto = req.files.photo?.[0];
+      
+      if (photoFiles && photoFiles.length > 0) {
+        // New uploaded photos
+        const newPhotoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+        allPhotos = [...existingPhotos, ...newPhotoUrls];
+        
+        updateData.photos = allPhotos;
+        if (allPhotos.length > 0) {
+          updateData.photo = allPhotos[0];
+        }
+      } else if (singlePhoto) {
+        // Single photo (backward compatibility)
+        updateData.photo = `${req.protocol}://${req.get('host')}/uploads/${singlePhoto.filename}`;
+        allPhotos = [updateData.photo];
+        updateData.photos = allPhotos;
+      }
+    } else {
+      // Keep existing photos if no new files uploaded
+      if (existingPhotos && existingPhotos.length > 0) {
+        updateData.photos = existingPhotos;
+        updateData.photo = existingPhotos[0];
+      } else if (photo !== undefined) {
+        updateData.photo = photo;
+      }
     }
+    
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const product = await Product.findByIdAndUpdate(

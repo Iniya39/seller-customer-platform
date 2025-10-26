@@ -20,16 +20,38 @@ export default function Dashboard() {
   const name = userPayload?.user?.name || userPayload?.customer?.name || 'Customer'
   const [searchTerm, setSearchTerm] = useState('')
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [unreadAcceptedCount, setUnreadAcceptedCount] = useState(0)
   const { cartItemCount, fetchCartCount } = useCart()
 
-  // Debug user data
+  // Fetch unread accepted orders count
   useEffect(() => {
-    const user = getCurrentUser()
-    const userId = getUserId(user)
-    console.log('Dashboard: User data:', user)
-    console.log('Dashboard: User ID:', userId)
-  }, [])
+    const fetchUnreadCount = async () => {
+      try {
+        const userId = getUserId(getCurrentUser())
+        if (!userId) return
 
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders/customer/${userId}`)
+        if (response.ok) {
+          const data = await response.json()
+          const orders = data.orders || []
+          
+          // Count orders that have been accepted but not viewed by customer
+          const unreadCount = orders.filter(order => 
+            order.status === 'accepted' && !order.viewedByCustomer
+          ).length
+          
+          setUnreadAcceptedCount(unreadCount)
+        }
+      } catch (error) {
+        console.error('Error fetching unread order count:', error)
+      }
+    }
+
+    fetchUnreadCount()
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Handle search functionality
   const handleSearch = (e) => {
@@ -111,27 +133,39 @@ export default function Dashboard() {
             </div>
           </button>
           <button 
-            style={cardButtonStyle}
-            onClick={() => navigate('/orders')}
+            style={{ ...cardButtonStyle, position: 'relative' }}
+            onClick={() => {
+              // Mark all accepted orders as viewed
+              fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders/customer/${getUserId(getCurrentUser())}/mark-viewed`, {
+                method: 'PUT'
+              }).catch(console.error)
+              setUnreadAcceptedCount(0)
+              navigate('/orders')
+            }}
           >
             View Orders
+            {unreadAcceptedCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                background: '#10b981',
+                color: 'white',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                border: '2px solid white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}>
+                {unreadAcceptedCount > 9 ? '9+' : unreadAcceptedCount}
+              </span>
+            )}
           </button>
-        </div>
-
-        {/* Debug Section - Remove this in production */}
-        <div style={{ 
-          marginTop: '2rem', 
-          padding: '1rem', 
-          background: '#f8f9fa', 
-          borderRadius: '8px', 
-          border: '1px solid #dee2e6' 
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#495057' }}>Debug Info</h3>
-          <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>
-            <div><strong>User Data:</strong> {JSON.stringify(getCurrentUser(), null, 2)}</div>
-            <div style={{ marginTop: '0.5rem' }}><strong>User ID:</strong> {getUserId(getCurrentUser())}</div>
-            <div style={{ marginTop: '0.5rem' }}><strong>Cart Count:</strong> {cartItemCount}</div>
-          </div>
         </div>
       </div>
 

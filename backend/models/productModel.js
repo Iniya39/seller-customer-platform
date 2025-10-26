@@ -109,6 +109,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  photos: [{
+    type: String,
+    trim: true
+  }],
   seller: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

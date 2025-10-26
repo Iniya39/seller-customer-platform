@@ -4,6 +4,7 @@ import {
   addCustomer,
   updateCustomer,
   deleteCustomer,
+  getCustomerById,
   checkPhoneNumber,
   customerSignup,
   customerLogin
@@ -13,6 +14,7 @@ const router = express.Router();
 
 // Routes for seller to manage customers
 router.get('/seller/:sellerId', getCustomersBySeller);
+router.get('/:id', getCustomerById); // Add GET by ID route
 router.post('/', addCustomer);
 router.put('/:id', updateCustomer);
 router.delete('/:id', deleteCustomer);

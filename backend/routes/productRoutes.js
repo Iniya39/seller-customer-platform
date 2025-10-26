@@ -37,11 +37,17 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Product routes
-router.post('/', upload.single('photo'), createProduct);                    // Create new product
+router.post('/', upload.fields([
+  { name: 'photo', maxCount: 1 },
+  { name: 'photos', maxCount: 10 }
+]), createProduct);                    // Create new product
 router.get('/', getAllProducts);                    // Get all products with filters
 router.get('/seller/:sellerId', getProductsBySeller); // Get products by specific seller
 router.get('/:id', getProductById);                 // Get single product by ID
-router.put('/:id', upload.single('photo'), updateProduct);                  // Update product
+router.put('/:id', upload.fields([
+  { name: 'photo', maxCount: 1 },
+  { name: 'photos', maxCount: 10 }
+]), updateProduct);                  // Update product
 router.delete('/:id', deleteProduct);               // Delete product (soft delete)
 
 export default router;

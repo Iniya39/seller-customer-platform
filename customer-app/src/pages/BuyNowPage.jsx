@@ -46,9 +46,15 @@ export default function BuyNowPage() {
       actualUser = userData
     }
     
-    return actualUser.name && actualUser.phone && 
+    console.log('Profile check - Name:', actualUser.name, 'Phone:', actualUser.phone)
+    console.log('Profile check - Address:', actualUser.address)
+    
+    const isComplete = actualUser.name && actualUser.phone && 
       actualUser.address?.street && actualUser.address?.city && 
       actualUser.address?.state && actualUser.address?.pincode
+    
+    console.log('Profile complete:', isComplete)
+    return isComplete
   }
 
   const handleQuantityChange = (newQuantity) => {
@@ -57,7 +63,7 @@ export default function BuyNowPage() {
     }
   }
 
-  const handleProceedToOrderSummary = () => {
+  const handleProceedToOrderSummary = async () => {
     // Always populate with existing profile data, even if incomplete
     let actualUser
     if (user.customer) {
@@ -66,6 +72,39 @@ export default function BuyNowPage() {
       actualUser = user.user
     } else {
       actualUser = user
+    }
+    
+    // Re-fetch user data to ensure we have the latest profile
+    if (actualUser?._id) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/customers/${actualUser._id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          actualUser = data.customer || data.user || data
+          
+          // Update localStorage with latest data
+          const updatedUserData = { ...user }
+          if (updatedUserData.customer) {
+            updatedUserData.customer = actualUser
+          } else if (updatedUserData.user) {
+            updatedUserData.user = actualUser
+          }
+          localStorage.setItem('user', JSON.stringify(updatedUserData))
+          
+          // Update state as well
+          setUser(updatedUserData)
+        } else {
+          console.error('Failed to fetch customer data:', response.status)
+        }
+      } catch (error) {
+        console.error('Error fetching latest user data:', error)
+      }
     }
     
     const displayPrice = product.discountedPrice && product.discountedPrice < product.price 
@@ -100,10 +139,10 @@ export default function BuyNowPage() {
     // Debug logging
     console.log('BuyNowPage: User data:', user)
     console.log('BuyNowPage: Actual user:', actualUser)
-    console.log('BuyNowPage: Profile complete:', isProfileComplete(user))
+    console.log('BuyNowPage: Profile complete:', isProfileComplete(actualUser))
     
     // Check if profile is complete, if not show modal
-    if (!isProfileComplete(user)) {
+    if (!isProfileComplete(actualUser)) {
       console.log('BuyNowPage: Profile incomplete, showing modal')
       setPendingCheckout(true)
       setShowProfileModal(true)

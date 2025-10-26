@@ -10,6 +10,7 @@ export default function Dashboard({ user }) {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'products'
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [unreadOrderCount, setUnreadOrderCount] = useState(0);
   
 
   // Fetch products when component mounts
@@ -27,6 +28,38 @@ export default function Dashboard({ user }) {
 
     if (user?._id) {
       fetchProducts();
+    }
+  }, [user?._id]);
+
+  // Fetch unread order count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/orders/seller/${user?._id}`);
+        const orders = response.data.orders || [];
+        
+        // Get last viewed timestamp from localStorage
+        const lastViewedKey = `last_viewed_orders_${user?._id}`;
+        const lastViewed = localStorage.getItem(lastViewedKey);
+        const lastViewedTime = lastViewed ? new Date(lastViewed) : new Date(0);
+        
+        // Count orders created after last viewed
+        const unreadCount = orders.filter(order => {
+          const orderTime = new Date(order.createdAt);
+          return orderTime > lastViewedTime;
+        }).length;
+        
+        setUnreadOrderCount(unreadCount);
+      } catch (error) {
+        console.error('Error fetching unread order count:', error);
+      }
+    };
+
+    if (user?._id) {
+      fetchUnreadCount();
+      // Refresh count every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
     }
   }, [user?._id]);
 
@@ -137,7 +170,13 @@ export default function Dashboard({ user }) {
             </button>
             {/* Edit Item button removed to keep single edit entry point */}
             <button 
-              onClick={() => navigate("/manage-orders")}
+              onClick={() => {
+                // Update last viewed timestamp
+                const lastViewedKey = `last_viewed_orders_${user?._id}`;
+                localStorage.setItem(lastViewedKey, new Date().toISOString());
+                setUnreadOrderCount(0);
+                navigate("/manage-orders");
+              }}
               style={{
                 padding: "1rem 2rem",
                 borderRadius: "8px",
@@ -147,12 +186,34 @@ export default function Dashboard({ user }) {
                 transition: "all 0.3s ease",
                 backgroundColor: "#646cff",
                 color: "white",
-                border: "none"
+                border: "none",
+                position: "relative"
               }}
               onMouseOver={(e) => e.target.style.backgroundColor = "#535bf2"}
               onMouseOut={(e) => e.target.style.backgroundColor = "#646cff"}
             >
               Order Management
+              {unreadOrderCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  background: '#ef4444',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  {unreadOrderCount > 9 ? '9+' : unreadOrderCount}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => navigate("/customer-management")}
