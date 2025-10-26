@@ -3,6 +3,7 @@ import express from 'express';
 import {
   createOrder,
   getOrdersBySeller,
+  getOrdersByCustomer,
   getOrderById,
   updateOrderStatus,
   updateDeliveryStatus,
@@ -13,6 +14,7 @@ const router = express.Router();
 
 // Order routes
 router.post('/', createOrder);                                    // Create new order
+router.get('/customer/:customerId', getOrdersByCustomer);        // Get orders for specific customer
 router.get('/seller/:sellerId', getOrdersBySeller);              // Get orders for specific seller
 router.get('/:orderId', getOrderById);                           // Get order by ID
 router.put('/:orderId/status', updateOrderStatus);               // Update order status

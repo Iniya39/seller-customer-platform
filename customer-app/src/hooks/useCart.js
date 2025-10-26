@@ -137,7 +137,7 @@ export const useCart = () => {
       if (response.ok) {
         // Refresh cart count after successful add
         await fetchCartCount()
-        return { success: true, message: `₹{quantity} item(s) added to cart successfully!` }
+        return { success: true, message: `${quantity} item(s) added to cart successfully!` }
       } else {
         throw new Error(data.error || 'Failed to add item to cart')
       }

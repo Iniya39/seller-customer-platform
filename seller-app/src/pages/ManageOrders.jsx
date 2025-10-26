@@ -2,19 +2,34 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-export default function ManageOrders() {
+export default function ManageOrders({ user }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [message, setMessage] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
 
-  // Fetch all orders (since there's only one seller)
+  // Fetch orders for the logged-in seller
   useEffect(() => {
     const fetchOrders = async () => {
+      if (!user?._id) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await axios.get(`http://localhost:5000/api/orders`);
-        setOrders(response.data.orders || []);
+        // Fetch orders filtered by seller ID
+        const response = await axios.get(`http://localhost:5000/api/orders/seller/${user._id}`);
+        
+        // Filter orders to show only items from this seller
+        const ordersWithFilteredItems = (response.data.orders || []).map(order => ({
+          ...order,
+          items: order.items.filter(item => 
+            item.seller?._id === user._id || item.seller?.toString() === user._id.toString()
+          )
+        })).filter(order => order.items.length > 0); // Only show orders that have items from this seller
+        
+        setOrders(ordersWithFilteredItems);
       } catch (error) {
         console.error("Failed to fetch orders:", error);
         setMessage('Failed to fetch orders');
@@ -24,12 +39,12 @@ export default function ManageOrders() {
     };
 
     fetchOrders();
-  }, []);
+  }, [user]);
 
   // Handle order status update
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/orders/₹{orderId}/status`, {
+      const response = await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, {
         status: newStatus,
         trackingNumber: trackingNumber
       });
@@ -39,7 +54,7 @@ export default function ManageOrders() {
         order._id === orderId ? { ...order, status: newStatus, trackingNumber: trackingNumber } : order
       ));
 
-      setMessage(`Order ₹{newStatus} successfully!`);
+      setMessage(`Order ${newStatus} successfully!`);
       setSelectedOrder(null);
       setTrackingNumber('');
       setTimeout(() => setMessage(''), 3000);
@@ -364,7 +379,7 @@ export default function ManageOrders() {
                       <span style={{ fontWeight: "600", minWidth: "80px", color: "#374151", marginTop: "0.125rem" }}>Address:</span>
                       <span style={{ color: "#6b7280", lineHeight: "1.4" }}>
                         {selectedOrder.customerDetails?.address ? 
-                          `₹{selectedOrder.customerDetails.address.street || ''}, ₹{selectedOrder.customerDetails.address.city || ''}, ₹{selectedOrder.customerDetails.address.state || ''} - ₹{selectedOrder.customerDetails.address.pincode || ''}`.replace(/^,\s*|,\s*₹/g, '') :
+                          `${selectedOrder.customerDetails.address.street || ''}, ${selectedOrder.customerDetails.address.city || ''}, ${selectedOrder.customerDetails.address.state || ''} - ${selectedOrder.customerDetails.address.pincode || ''}`.replace(/^,\s*|,\s*\$/g, '') :
                           'N/A'
                         }
                       </span>
@@ -430,7 +445,7 @@ export default function ManageOrders() {
                             borderRadius: "6px",
                             display: "inline-block"
                           }}>
-                            {Object.entries(item.variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
+                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
                           </div>
                         )}
                         <div style={{ 

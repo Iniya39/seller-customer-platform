@@ -9,6 +9,7 @@ export default function AddItem({ user }) {
   const [productData, setProductData] = useState({
     productId: "",
     name: "",
+    unit: "piece",
     description: "",
     stockStatus: "in_stock",
     price: 0,
@@ -319,17 +320,17 @@ export default function AddItem({ user }) {
       for (let i = 0; i < attributes.length; i++) {
         const attr = attributes[i];
         if (!attr.name) {
-          alert(`Please specify the name for attribute ₹{i + 1}`);
+          alert(`Please specify the name for attribute ${i + 1}`);
           return;
         }
         if (!attr.options || attr.options.length === 0) {
-          alert(`Please add at least one option for attribute "₹{attr.name}"`);
+          alert(`Please add at least one option for attribute "${attr.name}"`);
           return;
         }
         for (let j = 0; j < attr.options.length; j++) {
           const option = attr.options[j];
           if (!option.name) {
-            alert(`Please specify the name for option ₹{j + 1} in attribute "₹{attr.name}"`);
+            alert(`Please specify the name for option ${j + 1} in attribute "${attr.name}"`);
             return;
           }
         }
@@ -344,7 +345,7 @@ export default function AddItem({ user }) {
       for (let i = 0; i < variants.length; i++) {
         const variant = variants[i];
         if (variant.price <= 0) {
-          alert(`Please enter a valid price for variant ₹{i + 1}`);
+          alert(`Please enter a valid price for variant ${i + 1}`);
           return;
         }
       }
@@ -384,6 +385,7 @@ export default function AddItem({ user }) {
       const formData = new FormData();
       formData.append('productId', productToSave.productId);
       formData.append('name', productToSave.name);
+      formData.append('unit', productToSave.unit || 'piece');
       formData.append('description', productToSave.description);
       formData.append('category', productToSave.category);
       formData.append('hasVariations', productToSave.hasVariations);
@@ -427,6 +429,7 @@ export default function AddItem({ user }) {
     setProductData({
       productId: "",
       name: "",
+      unit: "piece",
       description: "",
       stockStatus: "in_stock",
       price: 0,
@@ -688,6 +691,35 @@ export default function AddItem({ user }) {
 
               <div>
                 <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                  Unit *
+                </label>
+                <select
+                  name="unit"
+                  value={productData.unit}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    fontSize: "1rem"
+                  }}
+                >
+                  <option value="piece">Piece</option>
+                  <option value="kg">Kilogram (kg)</option>
+                  <option value="gram">Gram (g)</option>
+                  <option value="liter">Liter (L)</option>
+                  <option value="ml">Milliliter (ml)</option>
+                  <option value="box">Box</option>
+                  <option value="pack">Pack</option>
+                  <option value="set">Set</option>
+                  <option value="pair">Pair</option>
+                  <option value="dozen">Dozen</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
                   Description *
                 </label>
                 <textarea
@@ -874,7 +906,7 @@ export default function AddItem({ user }) {
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                                 <div>
                                   <h4 style={{ margin: 0, fontSize: "0.9rem", color: "white" }}>
-                                    {Object.entries(variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
+                                    {Object.entries(variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
                                   </h4>
                                 </div>
                               </div>

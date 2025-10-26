@@ -17,7 +17,7 @@ export default function App() {
           <Route path="/" element={<Dashboard user={user} />} />
           <Route path="/add-item" element={<AddItem user={user} />} />
           <Route path="/edit-item/:id" element={<EditItem />} />
-          <Route path="/manage-orders" element={<ManageOrders />} />
+          <Route path="/manage-orders" element={<ManageOrders user={user} />} />
           <Route path="/customer-management" element={<CustomerManagement user={user} />} />
         </Routes>
       ) : (

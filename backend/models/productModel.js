@@ -14,6 +14,11 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  unit: {
+    type: String,
+    trim: true,
+    default: 'piece'
+  },
   description: {
     type: String,
     required: true,

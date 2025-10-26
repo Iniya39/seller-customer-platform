@@ -178,7 +178,7 @@ export default function OrderSuccess() {
           gap: '1rem'
         }}>
           <button
-            onClick={handleContinueShopping}
+            onClick={() => navigate('/products')}
             style={{
               flex: 1,
               padding: '1rem',
@@ -202,7 +202,7 @@ export default function OrderSuccess() {
           </button>
           
           <button
-            onClick={handleViewOrders}
+            onClick={() => navigate('/orders')}
             style={{
               flex: 1,
               padding: '1rem',

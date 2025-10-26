@@ -120,10 +120,10 @@ export default function CartPage() {
     const result = await updateCartItem(productId, newQuantity)
     
     if (result.success) {
-      setMessage(`✅ ₹{result.message}`)
+      setMessage(`✅ ${result.message}`)
       setTimeout(() => setMessage(''), 3000)
     } else {
-      setMessage(`❌ ₹{result.message}`)
+      setMessage(`❌ ${result.message}`)
       setTimeout(() => setMessage(''), 3000)
     }
   }
@@ -133,10 +133,10 @@ export default function CartPage() {
     const result = await removeFromCart(productId)
     
     if (result.success) {
-      setMessage(`✅ ₹{result.message}`)
+      setMessage(`✅ ${result.message}`)
       setTimeout(() => setMessage(''), 3000)
     } else {
-      setMessage(`❌ ₹{result.message}`)
+      setMessage(`❌ ${result.message}`)
       setTimeout(() => setMessage(''), 3000)
     }
   }
@@ -146,10 +146,10 @@ export default function CartPage() {
     const result = await clearCart()
     
     if (result.success) {
-      setMessage(`✅ ₹{result.message}`)
+      setMessage(`✅ ${result.message}`)
       setTimeout(() => setMessage(''), 3000)
     } else {
-      setMessage(`❌ ₹{result.message}`)
+      setMessage(`❌ ${result.message}`)
       setTimeout(() => setMessage(''), 3000)
     }
   }
@@ -307,6 +307,11 @@ export default function CartPage() {
                       <div style={{ flex: 1 }}>
                         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#0f172a' }}>
                           {product.name}
+                          {product.unit && (
+                            <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 'normal', marginLeft: '0.25rem' }}>
+                              ({product.unit})
+                            </span>
+                          )}
                         </h3>
                         <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b' }}>
                           {product.description}
@@ -324,7 +329,7 @@ export default function CartPage() {
                             borderRadius: '4px',
                             display: 'inline-block'
                           }}>
-                            {Object.entries(item.variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
+                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
                           </div>
                         )}
                         
@@ -517,7 +522,7 @@ export default function CartPage() {
                   }}
                   onClick={handleCheckout}
                 >
-                  {profileComplete ? 'Place Order' : 'Complete Profile First'}
+                  {profileComplete ? 'Proceed to Checkout' : 'Complete Profile First'}
                 </button>
 
                 <button 

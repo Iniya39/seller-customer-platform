@@ -16,7 +16,7 @@ export default function Dashboard({ user }) {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/products/seller/₹{user?._id}`);
+        const response = await axios.get(`http://localhost:5000/api/products/seller/${user?._id}`);
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -263,8 +263,8 @@ export default function Dashboard({ user }) {
                           <div style={{ color: "#ccc" }}>{product.description}</div>
                         </div>
                         <div style={{ marginBottom: "0.5rem" }}>
-                          <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Stock</div>
-                          <div style={{ color: "#fff" }}>{product.stock}</div>
+                          <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Stock Status</div>
+                          <div style={{ color: "#fff" }}>{product.stockStatus || product.hasVariations ? 'Has Variations' : 'Standard'}</div>
                         </div>
                         <div style={{ marginBottom: "1rem" }}>
                           <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Price</div>
@@ -287,7 +287,7 @@ export default function Dashboard({ user }) {
                           justifyContent: "flex-end"
                         }}>
                           <button
-                            onClick={() => navigate(`/edit-item/₹{product._id}`)}
+                            onClick={() => navigate(`/edit-item/${product._id}`)}
                             style={{
                               padding: "0.5rem 1rem",
                               borderRadius: "4px",

@@ -23,7 +23,7 @@ export const getAllProducts = async (filters = {}) => {
       }
     });
     
-    const response = await axios.get(`₹{API_BASE_URL}?₹{params.toString()}`);
+    const response = await axios.get(`${API_BASE_URL}?${params.toString()}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to fetch products');
@@ -33,7 +33,7 @@ export const getAllProducts = async (filters = {}) => {
 // Get a single product by ID
 export const getProductById = async (productId) => {
   try {
-    const response = await axios.get(`₹{API_BASE_URL}/₹{productId}`);
+    const response = await axios.get(`${API_BASE_URL}/${productId}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to fetch product');
@@ -57,7 +57,7 @@ export const updateProduct = async (productId, productData) => {
       }
     });
 
-    const response = await axios.put(`₹{API_BASE_URL}/₹{productId}`, formData, {
+    const response = await axios.put(`${API_BASE_URL}/${productId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
@@ -69,7 +69,7 @@ export const updateProduct = async (productId, productData) => {
 // Delete a product (soft delete)
 export const deleteProduct = async (productId) => {
   try {
-    const response = await axios.delete(`₹{API_BASE_URL}/₹{productId}`);
+    const response = await axios.delete(`${API_BASE_URL}/${productId}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to delete product');
@@ -79,7 +79,7 @@ export const deleteProduct = async (productId) => {
 // Get products by seller
 export const getProductsBySeller = async (sellerId) => {
   try {
-    const response = await axios.get(`₹{API_BASE_URL}/seller/₹{sellerId}`);
+    const response = await axios.get(`${API_BASE_URL}/seller/${sellerId}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to fetch seller products');

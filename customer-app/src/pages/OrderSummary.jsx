@@ -117,26 +117,45 @@ export default function OrderSummary() {
     try {
       setMessage('🔄 Placing your order...')
       
+      // Get the actual customer ID from logged-in user
+      const user = getCurrentUser()
+      const userId = getUserId(user)
+      
+      if (!userId) {
+        setMessage('❌ User ID not found. Please log in again.')
+        setTimeout(() => setMessage(''), 3000)
+        return
+      }
+      
       // Create order data
       const orderDataToSend = {
-        customer: orderData.user.id || orderData.user._id,
+        customer: userId,
         customerDetails: {
           name: u.name,
           email: u.email || 'customer@example.com',
           phone: u.phone,
           address: addr
         },
-        items: cartItems.map(item => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          price: item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price,
-          discountedPrice: item.discountedPrice,
-          seller: item.product.seller._id || item.product.seller,
-          variant: item.variant || null
-        })),
+        items: cartItems.map(item => {
+          // Get seller ID - handle both populated and non-populated seller
+          const sellerId = item.product.seller?._id || item.product.seller?.[0]?._id || item.product.seller?.[0] || item.product.seller || item.product.sellerId
+          
+          console.log('Processing item:', item.product.name, 'Seller ID:', sellerId)
+          
+          return {
+            product: item.product._id,
+            quantity: item.quantity,
+            price: item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price,
+            discountedPrice: item.discountedPrice,
+            seller: sellerId,
+            variant: item.variant || null
+          }
+        }),
         totalAmount: calculateTotalWithTax(cartItems),
         notes: 'Order placed directly - no payment required'
       }
+      
+      console.log('Order data to send:', JSON.stringify(orderDataToSend, null, 2))
       
       // Create order via API
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders`, {
@@ -147,9 +166,11 @@ export default function OrderSummary() {
         body: JSON.stringify(orderDataToSend)
       })
       
+      console.log('Order response status:', response.status)
+      
       if (response.ok) {
         const result = await response.json()
-        setMessage('✅ Order placed successfully!')
+        console.log('Order created successfully:', result)
         
         // Clear cart after successful order
         try {
@@ -168,21 +189,18 @@ export default function OrderSummary() {
           console.warn('Failed to clear cart:', cartError)
         }
         
+        // Show success message box
+        const orderId = result.order?.orderId || result.orderId || 'PENDING'
+        alert(`✅ Your order has been placed successfully!\n\nOrder ID: ${orderId}\n\nThank you for your purchase!`)
+        
+        // Redirect to products page after showing alert
         setTimeout(() => {
-          navigate('/order-success', { 
-            state: { 
-              orderData: {
-                orderId: result.order.orderId,
-                paymentMethod: 'Direct Order',
-                amount: calculateTotalWithTax(cartItems),
-                orderData: orderData
-              }
-            } 
-          })
-        }, 1500)
+          navigate('/products')
+        }, 500)
       } else {
         const error = await response.json()
-        setMessage(`❌ Failed to place order: ${error.error}`)
+        console.error('Order creation failed:', error)
+        setMessage(`❌ Failed to place order: ${error.error || error.message || 'Unknown error'}`)
         setTimeout(() => setMessage(''), 3000)
       }
     } catch (error) {
@@ -287,7 +305,7 @@ export default function OrderSummary() {
         setIsEditing(false)
         setTimeout(() => setMessage(''), 3000)
       } else {
-        setMessage(`❌ ₹{data.error}`)
+        setMessage(`❌ ${data.error}`)
         setTimeout(() => setMessage(''), 3000)
       }
     } catch (error) {
@@ -609,6 +627,11 @@ export default function OrderSummary() {
                       <div style={{ flex: 1 }}>
                         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#0f172a', fontWeight: '600' }}>
                           {product.name}
+                          {product.unit && (
+                            <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 'normal', marginLeft: '0.25rem' }}>
+                              ({product.unit})
+                            </span>
+                          )}
                         </h3>
                         <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b', lineHeight: '1.4' }}>
                           {product.description}
@@ -626,7 +649,7 @@ export default function OrderSummary() {
                             borderRadius: "6px",
                             display: "inline-block"
                           }}>
-                            {Object.entries(item.variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
+                            {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
                           </div>
                         )}
                         

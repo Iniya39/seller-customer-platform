@@ -8,17 +8,79 @@ export const createOrder = async (req, res) => {
   try {
     const { customer, customerDetails, items, totalAmount, notes } = req.body;
 
+    console.log('Order creation request received:', {
+      customer: customer ? 'present' : 'missing',
+      customerDetails: customerDetails ? 'present' : 'missing',
+      itemsCount: items?.length,
+      totalAmount,
+      hasNotes: !!notes
+    });
+
     // Validate required fields
     if (!customer || !customerDetails || !items || !totalAmount) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      const missingFields = [];
+      if (!customer) missingFields.push('customer');
+      if (!customerDetails) missingFields.push('customerDetails');
+      if (!items || !Array.isArray(items)) missingFields.push('items');
+      if (!totalAmount) missingFields.push('totalAmount');
+      
+      console.error('Missing required fields:', missingFields);
+      return res.status(400).json({ 
+        error: 'Missing required fields', 
+        details: missingFields 
+      });
+    }
+    
+    // Validate items array
+    if (!Array.isArray(items) || items.length === 0) {
+      console.error('Invalid items array');
+      return res.status(400).json({ error: 'Items must be a non-empty array' });
     }
 
-    // For single seller setup, we can simplify the order creation
-    // All items will be from the same seller
-    const processedItems = items.map(item => ({
-      ...item,
-      seller: item.seller || 'single-seller-id' // Default seller ID for single seller setup
-    }));
+    // Process items to ensure seller information is present
+    const processedItems = [];
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      console.log(`Processing item ${i + 1}:`, {
+        product: item.product,
+        quantity: item.quantity,
+        hasSeller: !!item.seller
+      });
+      
+      // Validate item has required fields
+      if (!item.product || !item.quantity || item.quantity < 1) {
+        console.error('Invalid item:', item);
+        return res.status(400).json({ 
+          error: `Item ${i + 1} is missing required fields: product, quantity` 
+        });
+      }
+      
+      // If seller is not provided, fetch it from the product
+      if (!item.seller) {
+        const product = await Product.findById(item.product);
+        console.log(`Product for item ${i + 1}:`, {
+          found: !!product,
+          hasSeller: !!(product?.seller)
+        });
+        
+        if (product && product.seller) {
+          item.seller = product.seller;
+        } else {
+          console.error(`No seller found for product ${item.product}`);
+          return res.status(400).json({ 
+            error: `Product ${item.product} has no seller assigned` 
+          });
+        }
+      }
+      
+      processedItems.push({
+        ...item,
+        seller: item.seller
+      });
+    }
+    
+    console.log('Processed items count:', processedItems.length);
 
     // Create order
     const order = new Order({
@@ -163,6 +225,29 @@ export const updateDeliveryStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating delivery status:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get orders for a specific customer
+export const getOrdersByCustomer = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+
+    const orders = await Order.find({
+      customer: customerId
+    })
+    .populate('customer', 'name email phone')
+    .populate('items.product', 'name description photo category')
+    .populate('items.seller', 'name email')
+    .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: 'Orders fetched successfully',
+      orders: orders
+    });
+  } catch (error) {
+    console.error('Error fetching customer orders:', error);
     res.status(500).json({ error: error.message });
   }
 };

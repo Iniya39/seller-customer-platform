@@ -9,6 +9,7 @@ export default function EditItem() {
   const navigate = useNavigate();
   const [item, setItem] = useState({
     name: "",
+    unit: "piece",
     description: "",
     stockStatus: "in_stock",
     price: 0,
@@ -227,7 +228,7 @@ export default function EditItem() {
       for (let i = 0; i < variants.length; i++) {
         const variant = variants[i];
         if (variant.price <= 0) {
-          alert(`Please enter a valid price for variant ₹{i + 1}`);
+          alert(`Please enter a valid price for variant ${i + 1}`);
           return;
         }
       }
@@ -400,6 +401,34 @@ export default function EditItem() {
               }}
               placeholder="Enter product name"
             />
+          </div>
+
+          {/* Unit */}
+          <div>
+            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Unit:</label>
+            <select
+              name="unit"
+              value={item.unit}
+              onChange={handleChange}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                fontSize: "1rem"
+              }}
+            >
+              <option value="piece">Piece</option>
+              <option value="kg">Kilogram (kg)</option>
+              <option value="gram">Gram (g)</option>
+              <option value="liter">Liter (L)</option>
+              <option value="ml">Milliliter (ml)</option>
+              <option value="box">Box</option>
+              <option value="pack">Pack</option>
+              <option value="set">Set</option>
+              <option value="pair">Pair</option>
+              <option value="dozen">Dozen</option>
+            </select>
           </div>
 
           {/* Description */}
@@ -597,7 +626,7 @@ export default function EditItem() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                           <div>
                             <h6 style={{ margin: 0, fontSize: "0.9rem", color: "white" }}>
-                              {Object.entries(variant.combination).map(([key, value]) => `₹{key}: ₹{value}`).join(', ')}
+                              {Object.entries(variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
                             </h6>
                           </div>
                         </div>

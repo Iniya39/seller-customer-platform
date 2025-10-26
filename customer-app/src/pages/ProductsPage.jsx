@@ -837,6 +837,11 @@ function ProductCard({ product, onClick }) {
         color: '#0f172a'
       }}>
         {product.name}
+        {product.unit && (
+          <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 'normal', marginLeft: '0.25rem' }}>
+            ({product.unit})
+          </span>
+        )}
       </h3>
 
       {/* Show variations indicator */}

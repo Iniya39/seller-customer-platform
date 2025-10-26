@@ -110,7 +110,12 @@ export default function Dashboard() {
               )}
             </div>
           </button>
-          <button style={cardButtonStyle}>View Orders</button>
+          <button 
+            style={cardButtonStyle}
+            onClick={() => navigate('/orders')}
+          >
+            View Orders
+          </button>
         </div>
 
         {/* Debug Section - Remove this in production */}
