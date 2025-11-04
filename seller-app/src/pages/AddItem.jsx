@@ -15,6 +15,7 @@ export default function AddItem({ user }) {
     stockStatus: "in_stock",
     price: 0,
     discountedPrice: 0,
+    discountPercent: 0,
     taxPercentage: 0,
     photo: "",
     category: "",
@@ -173,6 +174,25 @@ export default function AddItem({ user }) {
         }));
         setAttributes([]);
         setVariants([]);
+        return;
+      }
+      // Auto-calc discountedPrice when price or discountPercent changes (no variations case)
+      if (name === 'price') {
+        const newPrice = parseFloat(value) || 0;
+        setProductData(prev => {
+          const discountPct = parseFloat(prev.discountPercent) || 0;
+          const computedDiscounted = discountPct > 0 ? Number((newPrice * (1 - discountPct / 100)).toFixed(2)) : 0;
+          return { ...prev, price: newPrice, discountedPrice: computedDiscounted };
+        });
+        return;
+      }
+      if (name === 'discountPercent') {
+        const pct = Math.max(0, Math.min(100, parseFloat(value) || 0));
+        setProductData(prev => {
+          const base = parseFloat(prev.price) || 0;
+          const computedDiscounted = pct > 0 ? Number((base * (1 - pct / 100)).toFixed(2)) : 0;
+          return { ...prev, discountPercent: pct, discountedPrice: computedDiscounted };
+        });
         return;
       }
       setProductData(prev => ({ ...prev, [name]: value }));
@@ -418,6 +438,9 @@ export default function AddItem({ user }) {
       const formData = new FormData();
       formData.append('productId', productToSave.productId);
       formData.append('name', productToSave.name);
+      if (productToSave.taxPercentage !== undefined && productToSave.taxPercentage !== null) {
+        formData.append('taxPercentage', productToSave.taxPercentage);
+      }
       if (productToSave.brand !== undefined) {
         formData.append('brand', productToSave.brand);
       }
@@ -433,6 +456,9 @@ export default function AddItem({ user }) {
         formData.append('price', productToSave.price);
         if (productToSave.discountedPrice !== undefined && productToSave.discountedPrice !== null) {
           formData.append('discountedPrice', productToSave.discountedPrice);
+        }
+        if (productToSave.discountPercent !== undefined && productToSave.discountPercent !== null) {
+          formData.append('discountPercent', productToSave.discountPercent);
         }
         formData.append('stockStatus', productToSave.stockStatus);
       }
@@ -477,6 +503,8 @@ export default function AddItem({ user }) {
       stockStatus: "in_stock",
       price: 0,
       discountedPrice: 0,
+      discountPercent: 0,
+      taxPercentage: 0,
       photo: "",
       category: "",
       seller: user?._id || user?.id || "",
@@ -1157,13 +1185,15 @@ export default function AddItem({ user }) {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                     <div>
                       <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                        Discounted Price (₹)
+                        Discount percentage (%)
                       </label>
                       <input
                         type="number"
-                        name="discountedPrice"
-                        value={productData.discountedPrice}
+                        name="discountPercent"
+                        value={productData.discountPercent}
                         onChange={handleChange}
+                        min="0"
+                        max="100"
                         step="0.01"
                         style={{
                           width: "100%",
@@ -1171,6 +1201,28 @@ export default function AddItem({ user }) {
                           borderRadius: "6px",
                           border: "1px solid #ccc",
                           fontSize: "1rem"
+                        }}
+                        placeholder="Enter discount %"
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                        Discounted Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        name="discountedPrice"
+                        value={productData.discountedPrice}
+                        readOnly
+                        step="0.01"
+                        style={{
+                          width: "100%",
+                          padding: "0.75rem",
+                          borderRadius: "6px",
+                          border: "1px solid #ccc",
+                          fontSize: "1rem",
+                          background: "#f3f4f6",
+                          color: "#111827"
                         }}
                       />
                     </div>
@@ -1193,7 +1245,7 @@ export default function AddItem({ user }) {
                           border: "1px solid #ccc",
                           fontSize: "1rem"
                         }}
-                        placeholder="Enter tax amount"
+                        placeholder="Enter tax percentage"
                       />
                     </div>
                   </div>

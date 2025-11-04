@@ -9,6 +9,7 @@ export default function EditItem() {
   const navigate = useNavigate();
   const [item, setItem] = useState({
     name: "",
+    discountPercent: 0,
     brand: "",
     unit: "piece",
     description: "",
@@ -57,6 +58,13 @@ export default function EditItem() {
     ])
       .then(([productData]) => {
         setItem(productData);
+        // Derive discount percent from existing price/discountedPrice for display
+        try {
+          const base = parseFloat(productData.price) || 0;
+          const dp = parseFloat(productData.discountedPrice) || 0;
+          const pct = base > 0 && dp > 0 && dp < base ? Number(((1 - dp / base) * 100).toFixed(2)) : 0;
+          setItem(prev => ({ ...prev, discountPercent: pct }));
+        } catch (err) {}
         // Set attributes and variants if they exist
         if (productData.attributes) {
           setAttributes(productData.attributes);
@@ -93,6 +101,25 @@ export default function EditItem() {
         attributes: boolValue ? attributes : [],
         variants: boolValue ? variants : []
       }));
+      return;
+    }
+    // Auto-calc discountedPrice when price or discountPercent changes for non-variant products
+    if (name === 'price' && !item.hasVariations) {
+      const newPrice = parseFloat(value) || 0;
+      setItem(prev => {
+        const pct = parseFloat(prev.discountPercent) || 0;
+        const computed = pct > 0 ? Number((newPrice * (1 - pct / 100)).toFixed(2)) : 0;
+        return { ...prev, price: newPrice, discountedPrice: computed };
+      });
+      return;
+    }
+    if (name === 'discountPercent' && !item.hasVariations) {
+      const pct = Math.max(0, Math.min(100, parseFloat(value) || 0));
+      setItem(prev => {
+        const base = parseFloat(prev.price) || 0;
+        const computed = pct > 0 ? Number((base * (1 - pct / 100)).toFixed(2)) : 0;
+        return { ...prev, discountPercent: pct, discountedPrice: computed };
+      });
       return;
     }
     setItem(prev => ({ ...prev, [name]: value }));
@@ -270,6 +297,9 @@ export default function EditItem() {
         formData.append('price', item.price || 0);
         if (item.discountedPrice !== undefined && item.discountedPrice !== null) {
           formData.append('discountedPrice', item.discountedPrice);
+        }
+        if (item.discountPercent !== undefined && item.discountPercent !== null) {
+          formData.append('discountPercent', item.discountPercent);
         }
         formData.append('stockStatus', item.stockStatus || 'in_stock');
       }
@@ -816,12 +846,13 @@ export default function EditItem() {
             <>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Price:</label>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Price (₹):</label>
                   <input 
                     type="number" 
                     name="price" 
                     value={item.price} 
                     onChange={handleChange}
+                    step="0.01"
                     style={{
                       width: "100%",
                       padding: "0.75rem",
@@ -833,12 +864,15 @@ export default function EditItem() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Discounted Price:</label>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Discount percentage (%):</label>
                   <input 
                     type="number" 
-                    name="discountedPrice" 
-                    value={item.discountedPrice} 
+                    name="discountPercent" 
+                    value={item.discountPercent}
                     onChange={handleChange}
+                    min="0"
+                    max="100"
+                    step="0.01"
                     style={{
                       width: "100%",
                       padding: "0.75rem",
@@ -846,9 +880,31 @@ export default function EditItem() {
                       border: "1px solid #ccc",
                       fontSize: "1rem"
                     }}
-                    placeholder="Enter discounted price"
+                    placeholder="Enter discount %"
                   />
                 </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Discounted Price (₹):</label>
+                  <input 
+                    type="number" 
+                    name="discountedPrice" 
+                    value={item.discountedPrice}
+                    readOnly
+                    step="0.01"
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                      fontSize: "1rem",
+                      background: "#f3f4f6",
+                      color: "#111827"
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem", marginTop: "1rem" }}>
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Tax Percentage (%):</label>
                   <input 
@@ -866,7 +922,7 @@ export default function EditItem() {
                       border: "1px solid #ccc",
                       fontSize: "1rem"
                     }}
-                    placeholder="Enter tax amount"
+                    placeholder="Enter tax percentage"
                   />
                 </div>
               </div>

@@ -4,6 +4,31 @@ import SearchBar from '../components/SearchBar'
 import { useCart } from '../hooks/useCart'
 import { getCurrentUser, getUserId } from '../utils/userUtils'
 
+// Helper function to get discount percentage from product (uses seller-provided discountPercent)
+const getProductDiscountPct = (product) => {
+  if (!product) return 0
+  // Use seller-provided discountPercent directly
+  const pct = parseFloat(product.discountPercent) || 0
+  return pct > 0 && pct <= 100 ? Math.round(pct) : 0
+}
+
+// Helper function to get discount percentage for a variant (fallback to computed if discountPercent not available)
+const getVariantDiscountPct = (variant) => {
+  if (!variant) return 0
+  // For variants, check if discountPercent exists, otherwise compute from prices
+  if (variant.discountPercent !== undefined && variant.discountPercent !== null) {
+    const pct = parseFloat(variant.discountPercent) || 0
+    return pct > 0 && pct <= 100 ? Math.round(pct) : 0
+  }
+  // Fallback: compute from price difference
+  const base = parseFloat(variant.price) || 0
+  const disc = parseFloat(variant.discountedPrice) || 0
+  if (base > 0 && disc > 0 && disc < base) {
+    return Math.round((1 - disc / base) * 100)
+  }
+  return 0
+}
+
 export default function ProductsPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -91,12 +116,6 @@ export default function ProductsPage() {
       
       console.log('Fetched products:', data.products) // Debug log
       
-      // Test: Add tax percentage to first product for testing
-      if (data.products && data.products.length > 0) {
-        data.products[0].taxPercentage = 10; // Test with 10% tax
-        console.log('Test: Added 10% tax to first product:', data.products[0].name)
-      }
-      
       setProducts(data.products || [])
     } catch (err) {
       setError(err.message)
@@ -119,7 +138,6 @@ export default function ProductsPage() {
   }, {})
 
   const [categories, setCategories] = useState([])
-
 
   // Handle attribute selection for multi-attribute products
   const handleAttributeSelection = (attributeName, optionName) => {
@@ -425,7 +443,29 @@ export default function ProductsPage() {
             {/* Product Details */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
               {/* Product Images */}
-              <div>
+              <div style={{ position: 'relative' }}>
+                {(() => {
+                  const pct = selectedVariant ? getVariantDiscountPct(selectedVariant) : getProductDiscountPct(selectedProduct)
+                  return pct > 0 ? (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      right: '-8px',
+                      background: '#dc2626',
+                      color: 'white',
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      zIndex: 5
+                    }}>
+                      {pct}%
+                    </div>
+                  ) : null
+                })()}
                 {selectedProduct.photos && selectedProduct.photos.length > 0 ? (
                   <div>
                     {/* Main Image with Swipe Indicators */}
@@ -677,20 +717,7 @@ export default function ProductsPage() {
                             You Save: ₹{(selectedVariant.price - selectedVariant.discountedPrice).toFixed(2)}
                           </div>
                         )}
-                        {selectedProduct.taxPercentage && selectedProduct.taxPercentage > 0 && (
-                          <div style={{ 
-                            fontSize: '0.9rem', 
-                            color: '#059669',
-                            fontWeight: '500',
-                            marginTop: '0.5rem',
-                            background: '#f0fdf4',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '6px',
-                            display: 'inline-block'
-                          }}>
-                            Final Price: ₹{((selectedVariant.discountedPrice || selectedVariant.price) * (1 + selectedProduct.taxPercentage / 100)).toFixed(2)} (includes {selectedProduct.taxPercentage}% tax)
-                          </div>
-                        )}
+                        {/* Tax details intentionally hidden here; shown in cart/buy flows */}
                       </div>
                     )}
                   </div>
@@ -729,20 +756,7 @@ export default function ProductsPage() {
                         You Save: ₹{(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
                       </div>
                     )}
-                    {selectedProduct.taxPercentage && selectedProduct.taxPercentage > 0 && (
-                      <div style={{ 
-                        fontSize: '1rem', 
-                        color: '#059669',
-                        fontWeight: '500',
-                        marginTop: '0.5rem',
-                        background: '#f0fdf4',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        display: 'inline-block'
-                      }}>
-                        Final Price: ₹{((selectedProduct.discountedPrice || selectedProduct.price) * (1 + selectedProduct.taxPercentage / 100)).toFixed(2)} (includes {selectedProduct.taxPercentage}% tax)
-                      </div>
-                    )}
+                    {/* Tax details intentionally hidden here; shown in cart/buy flows */}
                   </div>
                 )}
                 
@@ -982,6 +996,8 @@ function ProductCard({ product, onClick }) {
     }
   }
 
+  const productPct = getProductDiscountPct(product)
+
   return (
     <div style={{
       background: 'white',
@@ -990,7 +1006,8 @@ function ProductCard({ product, onClick }) {
       boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       border: '1px solid #e2e8f0',
       transition: 'transform 0.2s, box-shadow 0.2s',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      position: 'relative'
     }}
     onClick={onClick}
     onMouseEnter={(e) => {
@@ -1002,6 +1019,26 @@ function ProductCard({ product, onClick }) {
       e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
     }}
     >
+      {productPct > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '-10px',
+          right: '-10px',
+          background: '#dc2626',
+          color: 'white',
+          width: '42px',
+          height: '42px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 700,
+          zIndex: 2,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+        }}>
+          {productPct}%
+        </div>
+      )}
       {product.photo && (
         <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
           <img 

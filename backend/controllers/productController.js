@@ -13,6 +13,7 @@ export const createProduct = async (req, res) => {
       category, 
       price, 
       discountedPrice, 
+      discountPercent,
       taxPercentage,
       stockStatus, 
       seller, 
@@ -157,6 +158,7 @@ export const createProduct = async (req, res) => {
       }
       productData.price = parseFloat(price);
       productData.discountedPrice = discountedPrice ? parseFloat(discountedPrice) : parseFloat(price);
+      productData.discountPercent = discountPercent ? parseFloat(discountPercent) : 0;
       productData.stockStatus = stockStatus;
     }
 
@@ -253,11 +255,13 @@ export const updateProduct = async (req, res) => {
   try {
     const { 
       name,
+      brand,
       unit,
       description, 
       category, 
       price, 
       discountedPrice, 
+      discountPercent,
       taxPercentage,
       stockStatus, 
       photo, 
@@ -344,6 +348,7 @@ export const updateProduct = async (req, res) => {
     if (category !== undefined) updateData.category = category;
     if (price !== undefined) updateData.price = price;
     if (discountedPrice !== undefined) updateData.discountedPrice = discountedPrice;
+    if (discountPercent !== undefined) updateData.discountPercent = parseFloat(discountPercent);
     if (taxPercentage !== undefined) updateData.taxPercentage = parseFloat(taxPercentage);
     if (stockStatus !== undefined) updateData.stockStatus = stockStatus;
     if (hasVariations !== undefined) updateData.hasVariations = hasVariations === 'true';

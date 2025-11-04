@@ -248,6 +248,9 @@ export default function BuyNowPage() {
   }
   
   const totalAmount = displayPrice * quantity
+  const taxPercentage = product.taxPercentage || 0
+  const taxAmount = (totalAmount * taxPercentage) / 100
+  const finalAmount = totalAmount + taxAmount
   
   // Check if product/variant is out of stock
   const isOutOfStock = product.hasVariations && selectedVariant 
@@ -596,6 +599,19 @@ export default function BuyNowPage() {
                   Free
                 </span>
               </div>
+
+              {taxPercentage > 0 && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#64748b' }}>
+                      Tax ({taxPercentage}%):
+                    </span>
+                    <span style={{ fontWeight: '500' }}>
+                      ₹{taxAmount.toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              )}
               
               <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '0.5rem 0' }} />
               
@@ -606,8 +622,8 @@ export default function BuyNowPage() {
                 fontWeight: '600', 
                 color: '#0f172a' 
               }}>
-                <span>Total Amount:</span>
-                <span>₹{totalAmount.toFixed(2)}</span>
+                <span>Total Amount {taxPercentage > 0 ? '(incl. tax)' : ''}:</span>
+                <span>₹{(taxPercentage > 0 ? finalAmount : totalAmount).toFixed(2)}</span>
               </div>
             </div>
           </div>

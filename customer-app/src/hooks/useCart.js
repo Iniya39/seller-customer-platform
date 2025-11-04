@@ -32,15 +32,7 @@ export const useCart = () => {
         const data = await response.json()
         console.log('Cart data:', data.cart) // Debug log
         
-        // Test: Add tax percentage to cart items for testing
-        if (data.cart && data.cart.items) {
-          data.cart.items.forEach(item => {
-            if (item.product) {
-              item.product.taxPercentage = 10; // Test with 10% tax
-            }
-          });
-          console.log('Test: Added 10% tax to all cart items')
-        }
+        // Ensure we use seller-provided taxPercentage coming from backend
         
         setCart(data.cart)
         const itemCount = data.cart?.items?.reduce((total, item) => total + item.quantity, 0) || 0
