@@ -97,6 +97,12 @@ const productSchema = new mongoose.Schema({
           type: Number,
           min: 0
         },
+        discountPercent: {
+          type: Number,
+          min: 0,
+          max: 100,
+          default: 0
+        },
         stock: {
           type: String,
           enum: ['in_stock', 'out_of_stock'],

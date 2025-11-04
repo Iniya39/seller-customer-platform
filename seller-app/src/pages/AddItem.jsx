@@ -327,6 +327,7 @@ export default function AddItem({ user }) {
         combination: combo,
         price: 0,
         discountedPrice: 0,
+        discountPercent: 0,
         stock: 'in_stock',
         images: [],
         isActive: true
@@ -341,9 +342,22 @@ export default function AddItem({ user }) {
 
   const updateVariant = (index, field, value) => {
     try {
-      const updatedVariants = variants.map((variant, i) => 
-        i === index ? { ...variant, [field]: value } : variant
-      );
+      const updatedVariants = variants.map((variant, i) => {
+        if (i === index) {
+          const updatedVariant = { ...variant, [field]: value };
+          
+          // Auto-calculate discountedPrice when price or discountPercent changes
+          if (field === 'price' || field === 'discountPercent') {
+            const price = field === 'price' ? parseFloat(value) || 0 : parseFloat(variant.price) || 0;
+            const discountPct = field === 'discountPercent' ? Math.max(0, Math.min(100, parseFloat(value) || 0)) : (parseFloat(variant.discountPercent) || 0);
+            const computedDiscounted = discountPct > 0 ? Number((price * (1 - discountPct / 100)).toFixed(2)) : 0;
+            updatedVariant.discountedPrice = computedDiscounted;
+          }
+          
+          return updatedVariant;
+        }
+        return variant;
+      });
       setVariants(updatedVariants);
     } catch (error) {
       console.error('Error updating variant:', error);
@@ -522,6 +536,14 @@ export default function AddItem({ user }) {
   };
 
   return (
+    <>
+      <style>{`
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      `}</style>
     <div style={{ 
       display: "flex", 
       flexDirection: "column", 
@@ -1040,8 +1062,33 @@ export default function AddItem({ user }) {
                                       padding: "0.5rem",
                                       borderRadius: "4px",
                                       border: "1px solid #ccc",
-                                      fontSize: "0.9rem"
+                                      fontSize: "0.9rem",
+                                      MozAppearance: "textfield",
+                                      WebkitAppearance: "none"
                                     }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
+                                    Discount percentage (%)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={variant.discountPercent || 0}
+                                    onChange={(e) => updateVariant(index, 'discountPercent', parseFloat(e.target.value) || 0)}
+                                    step="0.01"
+                                    min="0"
+                                    max="100"
+                                    style={{
+                                      width: "100%",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      border: "1px solid #ccc",
+                                      fontSize: "0.9rem",
+                                      MozAppearance: "textfield",
+                                      WebkitAppearance: "none"
+                                    }}
+                                    placeholder="Enter discount %"
                                   />
                                 </div>
                                 <div>
@@ -1050,15 +1097,16 @@ export default function AddItem({ user }) {
                                   </label>
                                   <input
                                     type="number"
-                                    value={variant.discountedPrice}
-                                    onChange={(e) => updateVariant(index, 'discountedPrice', parseFloat(e.target.value) || 0)}
+                                    value={variant.discountedPrice || 0}
+                                    readOnly
                                     step="0.01"
                                     style={{
                                       width: "100%",
                                       padding: "0.5rem",
                                       borderRadius: "4px",
                                       border: "1px solid #ccc",
-                                      fontSize: "0.9rem"
+                                      fontSize: "0.9rem",
+                                      backgroundColor: '#f0f0f0'
                                     }}
                                   />
                                 </div>
@@ -1128,7 +1176,9 @@ export default function AddItem({ user }) {
                           padding: "0.75rem",
                           borderRadius: "6px",
                           border: "1px solid #ccc",
-                          fontSize: "1rem"
+                          fontSize: "1rem",
+                          MozAppearance: "textfield",
+                          WebkitAppearance: "none"
                         }}
                         placeholder="Enter tax percentage"
                       />
@@ -1200,7 +1250,9 @@ export default function AddItem({ user }) {
                           padding: "0.75rem",
                           borderRadius: "6px",
                           border: "1px solid #ccc",
-                          fontSize: "1rem"
+                          fontSize: "1rem",
+                          MozAppearance: "textfield",
+                          WebkitAppearance: "none"
                         }}
                         placeholder="Enter discount %"
                       />
@@ -1243,7 +1295,9 @@ export default function AddItem({ user }) {
                           padding: "0.75rem",
                           borderRadius: "6px",
                           border: "1px solid #ccc",
-                          fontSize: "1rem"
+                          fontSize: "1rem",
+                          MozAppearance: "textfield",
+                          WebkitAppearance: "none"
                         }}
                         placeholder="Enter tax percentage"
                       />
@@ -1391,5 +1445,6 @@ export default function AddItem({ user }) {
         </>
       </div>
     </div>
+    </>
   );
 }

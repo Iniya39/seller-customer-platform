@@ -7,7 +7,20 @@ import { getCurrentUser, getUserId } from '../utils/userUtils'
 // Helper function to get discount percentage from product (uses seller-provided discountPercent)
 const getProductDiscountPct = (product) => {
   if (!product) return 0
-  // Use seller-provided discountPercent directly
+  
+  // For products with variations, find the variant with greatest discount percentage
+  if (product.hasVariations && Array.isArray(product.variants) && product.variants.length > 0) {
+    let maxPct = 0
+    product.variants.forEach(variant => {
+      const variantPct = getVariantDiscountPct(variant)
+      if (variantPct > maxPct) {
+        maxPct = variantPct
+      }
+    })
+    return maxPct
+  }
+  
+  // Use seller-provided discountPercent directly for non-variant products
   const pct = parseFloat(product.discountPercent) || 0
   return pct > 0 && pct <= 100 ? Math.round(pct) : 0
 }
@@ -684,78 +697,136 @@ export default function ProductsPage() {
                           )}
                         </div>
                         
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                          <span style={{ 
-                            fontSize: '2rem', 
-                            fontWeight: '700', 
-                            color: selectedVariant.stock === 'out_of_stock' ? '#9ca3af' : '#059669'
-                          }}>
-                            ₹{selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price 
-                              ? selectedVariant.discountedPrice 
-                              : selectedVariant.price}
-                          </span>
-                          {selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price && (
-                            <span style={{ 
-                              fontSize: '1.2rem', 
-                              color: '#64748b', 
-                              textDecoration: 'line-through' 
-                            }}>
-                              ₹{selectedVariant.price}
-                            </span>
-                          )}
-                        </div>
-                        {selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price && (
-                          <div style={{ 
-                            fontSize: '1rem', 
-                            color: '#dc2626', 
-                            fontWeight: '600',
-                            background: '#fef2f2',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '6px',
-                            display: 'inline-block'
-                          }}>
-                            You Save: ₹{(selectedVariant.price - selectedVariant.discountedPrice).toFixed(2)}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', marginBottom: '0.5rem', gap: '1rem' }}>
+                          {/* Left: Price */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                              <span style={{ 
+                                fontSize: '2rem', 
+                                fontWeight: '700', 
+                                color: selectedVariant.stock === 'out_of_stock' ? '#9ca3af' : '#059669'
+                              }}>
+                                ₹{selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price 
+                                  ? selectedVariant.discountedPrice 
+                                  : selectedVariant.price}
+                              </span>
+                              {selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price && (
+                                <span style={{ 
+                                  fontSize: '1.2rem', 
+                                  color: '#64748b', 
+                                  textDecoration: 'line-through' 
+                                }}>
+                                  ₹{selectedVariant.price}
+                                </span>
+                              )}
+                            </div>
+                            {selectedVariant.discountedPrice && selectedVariant.discountedPrice < selectedVariant.price && (
+                              <div style={{ 
+                                fontSize: '1rem', 
+                                color: '#dc2626', 
+                                fontWeight: '600',
+                                background: '#fef2f2',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                display: 'inline-block',
+                                width: 'fit-content'
+                              }}>
+                                You Save: ₹{(selectedVariant.price - selectedVariant.discountedPrice).toFixed(2)}
+                              </div>
+                            )}
                           </div>
-                        )}
+                          
+                          {/* Center: Brand Name */}
+                          {selectedProduct.brand && (
+                            <div style={{ 
+                              fontSize: '1.8rem', 
+                              fontWeight: '700',
+                              color: '#000000',
+                              textAlign: 'center',
+                              padding: '0.75rem 1.5rem',
+                              border: '2px solid #000000',
+                              borderRadius: '8px',
+                              background: '#ffffff',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              margin: '0 auto'
+                            }}>
+                              {selectedProduct.brand}
+                            </div>
+                          )}
+                          
+                          {/* Right: Empty */}
+                          <div></div>
+                        </div>
                         {/* Tax details intentionally hidden here; shown in cart/buy flows */}
                       </div>
                     )}
                   </div>
                 ) : (
                   <div style={{ marginBottom: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                      <span style={{ 
-                        fontSize: '2.5rem', 
-                        fontWeight: '700', 
-                        color: '#059669' 
-                      }}>
-                        ₹{selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price 
-                          ? selectedProduct.discountedPrice 
-                          : selectedProduct.price}
-                      </span>
-                      {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
-                        <span style={{ 
-                          fontSize: '1.5rem', 
-                          color: '#64748b', 
-                          textDecoration: 'line-through' 
-                        }}>
-                          ₹{selectedProduct.price}
-                        </span>
-                      )}
-                    </div>
-                    {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
-                      <div style={{ 
-                        fontSize: '1.1rem', 
-                        color: '#dc2626', 
-                        fontWeight: '600',
-                        background: '#fef2f2',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        display: 'inline-block'
-                      }}>
-                        You Save: ₹{(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', marginBottom: '0.5rem', gap: '1rem' }}>
+                      {/* Left: Price */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <span style={{ 
+                            fontSize: '2.5rem', 
+                            fontWeight: '700', 
+                            color: '#059669' 
+                          }}>
+                            ₹{selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price 
+                              ? selectedProduct.discountedPrice 
+                              : selectedProduct.price}
+                          </span>
+                          {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
+                            <span style={{ 
+                              fontSize: '1.5rem', 
+                              color: '#64748b', 
+                              textDecoration: 'line-through' 
+                            }}>
+                              ₹{selectedProduct.price}
+                            </span>
+                          )}
+                        </div>
+                        {selectedProduct.discountedPrice && selectedProduct.discountedPrice < selectedProduct.price && (
+                          <div style={{ 
+                            fontSize: '1.1rem', 
+                            color: '#dc2626', 
+                            fontWeight: '600',
+                            background: '#fef2f2',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '6px',
+                            display: 'inline-block',
+                            width: 'fit-content'
+                          }}>
+                            You Save: ₹{(selectedProduct.price - selectedProduct.discountedPrice).toFixed(2)}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      
+                      {/* Center: Brand Name */}
+                      {selectedProduct.brand && (
+                        <div style={{ 
+                          fontSize: '1.8rem', 
+                          fontWeight: '700',
+                          color: '#000000',
+                          textAlign: 'center',
+                          padding: '0.75rem 1.5rem',
+                          border: '2px solid #000000',
+                          borderRadius: '8px',
+                          background: '#ffffff',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          margin: '0 auto'
+                        }}>
+                          {selectedProduct.brand}
+                        </div>
+                      )}
+                      
+                      {/* Right: Empty */}
+                      <div></div>
+                    </div>
                     {/* Tax details intentionally hidden here; shown in cart/buy flows */}
                   </div>
                 )}

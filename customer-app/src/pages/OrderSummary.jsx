@@ -741,13 +741,6 @@ export default function OrderSummary() {
                               )}
                             </div>
                           </div>
-                          
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Quantity:</span>
-                            <span style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>
-                              {item.quantity}
-                            </span>
-                          </div>
 
                           {hasDiscount && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -757,35 +750,37 @@ export default function OrderSummary() {
                               </span>
                             </div>
                           )}
-
-                          {/* Tax Information */}
-                          {product.taxPercentage && product.taxPercentage > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.9rem', color: '#059669', fontWeight: '500' }}>Final Price (inc. {product.taxPercentage}% tax):</span>
-                              <span style={{ fontSize: '1rem', fontWeight: '600', color: '#059669' }}>
-                                ₹{(itemTotal + (itemTotal * product.taxPercentage / 100)).toFixed(2)}
-                              </span>
-                            </div>
-                          )}
-
-                          <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '0.25rem 0' }} />
                           
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>Item Total:</span>
-                            <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#0f172a' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Quantity:</span>
+                            <span style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>
+                              {item.quantity}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Subtotal:</span>
+                            <span style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>
                               ₹{itemTotal.toFixed(2)}
                             </span>
                           </div>
 
-                          {/* Total with Tax */}
+                          {/* Tax Information */}
                           {product.taxPercentage && product.taxPercentage > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                              <span style={{ fontSize: '1rem', fontWeight: '700', color: '#059669' }}>Final Total:</span>
-                              <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#059669' }}>
-                                ₹{(itemTotal + (itemTotal * product.taxPercentage / 100)).toFixed(2)}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Tax ({product.taxPercentage}%):</span>
+                              <span style={{ fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>
+                                ₹{(itemTotal * product.taxPercentage / 100).toFixed(2)}
                               </span>
                             </div>
                           )}
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                            <span style={{ fontSize: '1rem', fontWeight: '700', color: '#0f172a' }}>Final Amount:</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#059669' }}>
+                              ₹{product.taxPercentage && product.taxPercentage > 0 ? (itemTotal + (itemTotal * product.taxPercentage / 100)).toFixed(2) : itemTotal.toFixed(2)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

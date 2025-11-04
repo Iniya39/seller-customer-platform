@@ -221,10 +221,21 @@ export default function EditItem() {
           JSON.stringify(v.combination) === JSON.stringify(combo)
         );
         
+        // Calculate discountPercent from price and discountedPrice if not present
+        let discountPercent = 0
+        if (existingVariant) {
+          if (existingVariant.discountPercent !== undefined && existingVariant.discountPercent !== null) {
+            discountPercent = existingVariant.discountPercent
+          } else if (existingVariant.price > 0 && existingVariant.discountedPrice > 0 && existingVariant.discountedPrice < existingVariant.price) {
+            discountPercent = Math.round((1 - existingVariant.discountedPrice / existingVariant.price) * 100)
+          }
+        }
+        
         return {
           combination: combo,
           price: existingVariant ? existingVariant.price : 0,
           discountedPrice: existingVariant ? existingVariant.discountedPrice : 0,
+          discountPercent: discountPercent,
           stock: existingVariant ? existingVariant.stock : 'in_stock',
           images: existingVariant ? existingVariant.images : [],
           isActive: existingVariant ? existingVariant.isActive : true
@@ -240,10 +251,17 @@ export default function EditItem() {
   // Update variant properties
   const updateVariant = (variantIndex, field, value) => {
     const newVariants = [...variants];
-    newVariants[variantIndex] = {
-      ...newVariants[variantIndex],
-      [field]: value
-    };
+    const updatedVariant = { ...newVariants[variantIndex], [field]: value };
+    
+    // Auto-calculate discountedPrice when price or discountPercent changes
+    if (field === 'price' || field === 'discountPercent') {
+      const price = field === 'price' ? parseFloat(value) || 0 : parseFloat(updatedVariant.price) || 0;
+      const discountPct = field === 'discountPercent' ? Math.max(0, Math.min(100, parseFloat(value) || 0)) : (parseFloat(updatedVariant.discountPercent) || 0);
+      const computedDiscounted = discountPct > 0 ? Number((price * (1 - discountPct / 100)).toFixed(2)) : 0;
+      updatedVariant.discountedPrice = computedDiscounted;
+    }
+    
+    newVariants[variantIndex] = updatedVariant;
     setVariants(newVariants);
     setItem(prev => ({ ...prev, variants: newVariants }));
   };
@@ -385,6 +403,14 @@ export default function EditItem() {
   }
 
   return (
+    <>
+      <style>{`
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      `}</style>
     <div style={{ 
       display: "flex", 
       flexDirection: "column", 
@@ -735,8 +761,33 @@ export default function EditItem() {
                                 padding: "0.5rem",
                                 borderRadius: "4px",
                                 border: "1px solid #ccc",
-                                fontSize: "0.9rem"
+                                fontSize: "0.9rem",
+                                MozAppearance: "textfield",
+                                WebkitAppearance: "none"
                               }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", fontWeight: "500" }}>
+                              Discount percentage (%)
+                            </label>
+                            <input
+                              type="number"
+                              value={variant.discountPercent || 0}
+                              onChange={(e) => updateVariant(index, 'discountPercent', parseFloat(e.target.value) || 0)}
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "0.9rem",
+                                MozAppearance: "textfield",
+                                WebkitAppearance: "none"
+                              }}
+                              placeholder="Enter discount %"
                             />
                           </div>
                           <div>
@@ -745,15 +796,16 @@ export default function EditItem() {
                             </label>
                             <input
                               type="number"
-                              value={variant.discountedPrice}
-                              onChange={(e) => updateVariant(index, 'discountedPrice', parseFloat(e.target.value) || 0)}
+                              value={variant.discountedPrice || 0}
+                              readOnly
                               step="0.01"
                               style={{
                                 width: "100%",
                                 padding: "0.5rem",
                                 borderRadius: "4px",
                                 border: "1px solid #ccc",
-                                fontSize: "0.9rem"
+                                fontSize: "0.9rem",
+                                backgroundColor: '#f0f0f0'
                               }}
                             />
                           </div>
@@ -833,7 +885,9 @@ export default function EditItem() {
                     padding: "0.75rem",
                     borderRadius: "6px",
                     border: "1px solid #ccc",
-                    fontSize: "1rem"
+                    fontSize: "1rem",
+                    MozAppearance: "textfield",
+                    WebkitAppearance: "none"
                   }}
                   placeholder="Enter tax percentage"
                 />
@@ -878,7 +932,9 @@ export default function EditItem() {
                       padding: "0.75rem",
                       borderRadius: "6px",
                       border: "1px solid #ccc",
-                      fontSize: "1rem"
+                      fontSize: "1rem",
+                      MozAppearance: "textfield",
+                      WebkitAppearance: "none"
                     }}
                     placeholder="Enter discount %"
                   />
@@ -920,7 +976,9 @@ export default function EditItem() {
                       padding: "0.75rem",
                       borderRadius: "6px",
                       border: "1px solid #ccc",
-                      fontSize: "1rem"
+                      fontSize: "1rem",
+                      MozAppearance: "textfield",
+                      WebkitAppearance: "none"
                     }}
                     placeholder="Enter tax percentage"
                   />
@@ -1107,5 +1165,6 @@ export default function EditItem() {
         </div>
       </div>
     </div>
+    </>
   );
 }
