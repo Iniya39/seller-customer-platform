@@ -805,7 +805,8 @@ export default function EditItem() {
                                 borderRadius: "4px",
                                 border: "1px solid #ccc",
                                 fontSize: "0.9rem",
-                                backgroundColor: '#f0f0f0'
+                                backgroundColor: '#ffffff',
+                                color: '#000000'
                               }}
                             />
                           </div>
@@ -953,8 +954,8 @@ export default function EditItem() {
                       borderRadius: "6px",
                       border: "1px solid #ccc",
                       fontSize: "1rem",
-                      background: "#f3f4f6",
-                      color: "#111827"
+                      backgroundColor: '#ffffff',
+                      color: '#000000'
                     }}
                   />
                 </div>

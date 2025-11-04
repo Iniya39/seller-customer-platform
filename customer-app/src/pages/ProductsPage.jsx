@@ -137,10 +137,17 @@ export default function ProductsPage() {
     }
   }
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredProducts = products.filter(product => {
+    if (!searchTerm) return true
+    
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      product.name.toLowerCase().includes(searchLower) ||
+      product.description.toLowerCase().includes(searchLower) ||
+      (product.category && product.category.toLowerCase().includes(searchLower)) ||
+      (product.brand && product.brand.toLowerCase().includes(searchLower))
+    )
+  })
 
   const productsByCategory = filteredProducts.reduce((acc, product) => {
     if (!acc[product.category]) {
