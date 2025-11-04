@@ -8,6 +8,11 @@ export default function CustomerManagement({ user }) {
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '' });
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyCustomer, setHistoryCustomer] = useState(null);
+  const [historyOrders, setHistoryOrders] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
 
   // Fetch customers when component mounts
   useEffect(() => {
@@ -85,6 +90,47 @@ export default function CustomerManagement({ user }) {
     } catch (error) {
       console.error('Error deleting customer:', error);
       alert('Error removing customer. Please try again.');
+    }
+  };
+
+  // Open history modal and fetch orders for the customer
+  const openHistory = async (customer) => {
+    setShowHistory(true);
+    setHistoryCustomer(customer);
+    setHistoryOrders([]);
+    setHistoryError('');
+    setHistoryLoading(true);
+    try {
+      // Fetch latest customer profile and orders
+      const [custRes, ordersRes] = await Promise.all([
+        axios.get(`http://localhost:5000/api/customers/${customer._id}`),
+        axios.get(`http://localhost:5000/api/orders/customer/${customer._id}`)
+      ]);
+
+      const latestCustomer = custRes.data?.customer || customer;
+      const orders = ordersRes.data?.orders || [];
+
+      // Fallback to order.customer (populated) or order.customerDetails if name/phone missing
+      const firstOrder = orders?.[0] || {};
+      const firstOrderCustomer = firstOrder?.customer || {};
+      const firstOrderDetails = firstOrder?.customerDetails || {};
+      const mergedCustomer = {
+        ...latestCustomer,
+        name: (latestCustomer?.name && latestCustomer.name.trim())
+          ? latestCustomer.name
+          : (firstOrderCustomer?.name || firstOrderDetails?.name || ''),
+        phone: (latestCustomer?.phone && latestCustomer.phone.trim())
+          ? latestCustomer.phone
+          : (firstOrderCustomer?.phone || firstOrderDetails?.phone || '')
+      };
+
+      setHistoryCustomer(mergedCustomer);
+      setHistoryOrders(orders);
+    } catch (error) {
+      console.error('Error fetching customer history/profile:', error);
+      setHistoryError('Failed to load history or profile.');
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -420,9 +466,13 @@ export default function CustomerManagement({ user }) {
                   </div>
                 </div>
                 <div style={{ marginBottom: "1.5rem" }}>
-                  <div style={{ color: "#aaa", fontSize: "0.9rem", marginBottom: "0.25rem" }}>Added</div>
-                  <div style={{ color: "#ccc", fontSize: "0.9rem" }}>
-                    {new Date(customer.createdAt).toLocaleDateString()}
+                  <div style={{ color: "#aaa", fontSize: "0.9rem", marginBottom: "0.25rem" }}>Address</div>
+                  <div style={{ color: "#fff", fontSize: "0.95rem", lineHeight: 1.4 }}>
+                    <div>{customer?.address?.street || '—'}</div>
+                    <div>
+                      {(customer?.address?.city || '—')}, {(customer?.address?.state || '—')} {customer?.address?.pincode ? `- ${customer.address.pincode}` : ''}
+                    </div>
+                    <div>{customer?.address?.country || '—'}</div>
                   </div>
                 </div>
                 <div style={{ 
@@ -430,6 +480,24 @@ export default function CustomerManagement({ user }) {
                   gap: "0.75rem",
                   justifyContent: "flex-end"
                 }}>
+                  <button
+                    onClick={() => openHistory(customer)}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      backgroundColor: "#0ea5e9",
+                      color: "white",
+                      border: "none"
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = "#0284c7"}
+                    onMouseOut={(e) => e.target.style.backgroundColor = "#0ea5e9"}
+                  >
+                    History
+                  </button>
                   <button
                     onClick={() => setEditingCustomer(customer)}
                     style={{
@@ -469,6 +537,145 @@ export default function CustomerManagement({ user }) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {/* History Modal */}
+        {showHistory && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1100,
+            padding: "2rem"
+          }}
+          onClick={() => {
+            setShowHistory(false);
+            setHistoryCustomer(null);
+            setHistoryOrders([]);
+            setHistoryError('');
+          }}
+          >
+            <div style={{
+              background: "white",
+              borderRadius: "16px",
+              padding: "1.5rem",
+              maxWidth: "800px",
+              width: "100%",
+              maxHeight: "85vh",
+              overflow: "auto",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <h2 style={{ margin: 0, color: "#0f172a", fontSize: "1.5rem", letterSpacing: 0.2 }}>Customer History</h2>
+                <button
+                  onClick={() => {
+                    setShowHistory(false);
+                    setHistoryCustomer(null);
+                    setHistoryOrders([]);
+                    setHistoryError('');
+                  }}
+                  style={{
+                    padding: "0.5rem 0.75rem",
+                    borderRadius: "8px",
+                    border: "1px solid #e5e7eb",
+                    background: "#f3f4f6",
+                    cursor: "pointer"
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+
+              {/* Profile Details */}
+              {historyCustomer && (
+                <div style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  padding: "1rem",
+                  marginBottom: "1rem",
+                  background: "#f9fafb"
+                }}>
+                  <div style={{ fontWeight: 700, marginBottom: "0.5rem", color: "#111827" }}>Profile</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <span style={{ color: "#6b7280", minWidth: 64 }}>Name:</span>
+                      <span style={{ color: "#111827", fontWeight: 600 }}>{(historyCustomer?.name && historyCustomer.name.trim()) ? historyCustomer.name : '—'}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <span style={{ color: "#6b7280", minWidth: 64 }}>Phone:</span>
+                      <span style={{ color: "#111827", fontWeight: 600 }}>{(historyCustomer?.phone && historyCustomer.phone.trim()) ? historyCustomer.phone : '—'}</span>
+                    </div>
+                    {historyCustomer?.email && (
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <span style={{ color: "#6b7280", minWidth: 64 }}>Email:</span>
+                        <span style={{ color: "#111827", fontWeight: 600 }}>{historyCustomer.email}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <div style={{ color: "#6b7280", marginBottom: "0.25rem" }}>Address</div>
+                    <div style={{ color: "#111827", fontWeight: 500 }}>{historyCustomer?.address?.street || '—'}</div>
+                    <div style={{ color: "#111827", fontWeight: 500 }}>
+                      {(historyCustomer?.address?.city || '—')}, {(historyCustomer?.address?.state || '—')} {historyCustomer?.address?.pincode ? `- ${historyCustomer.address.pincode}` : ''}
+                    </div>
+                    <div style={{ color: "#111827", fontWeight: 500 }}>{historyCustomer?.address?.country || '—'}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Orders List */}
+              <div>
+                <div style={{ fontWeight: 700, marginBottom: "0.5rem", color: "#111827" }}>Orders</div>
+                {historyLoading && <div style={{ color: "#6b7280" }}>Loading orders...</div>}
+                {historyError && <div style={{ color: "#b91c1c" }}>{historyError}</div>}
+                {!historyLoading && !historyError && historyOrders.length === 0 && (
+                  <div style={{ color: "#6b7280" }}>No orders found for this customer.</div>
+                )}
+                {!historyLoading && !historyError && historyOrders.length > 0 && (
+                  <div style={{ display: "grid", gap: "1rem" }}>
+                    {historyOrders.map((order) => (
+                      <div key={order._id} style={{
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "12px",
+                        padding: "1rem",
+                        background: "#ffffff"
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                          <div style={{ fontWeight: 600 }}>#{order.orderId || order._id.slice(-6)}</div>
+                          <div style={{ color: "#6b7280" }}>{new Date(order.createdAt).toLocaleString()}</div>
+                        </div>
+                        <div style={{ marginBottom: "0.5rem", color: "#111827", fontWeight: 600 }}>Total: ₹{order.totalAmount}</div>
+                        {Array.isArray(order.items) && order.items.length > 0 && (
+                          <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr auto auto",
+                            gap: "0.5rem",
+                            borderTop: "1px solid #e5e7eb",
+                            paddingTop: "0.5rem"
+                          }}>
+                            {order.items.map((it, idx) => (
+                              <div key={idx} style={{ display: "contents" }}>
+                                <div style={{ color: "#111827" }}>{it.product?.name || 'Product'}</div>
+                                <div style={{ color: "#6b7280", textAlign: "right" }}>x{it.quantity}</div>
+                                <div style={{ color: "#111827", textAlign: "right", fontWeight: 500 }}>₹{it.price}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
