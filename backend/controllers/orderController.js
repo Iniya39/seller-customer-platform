@@ -114,7 +114,7 @@ export const getOrdersBySeller = async (req, res) => {
       'items.seller': sellerId
     })
     .populate('customer', 'name email phone')
-    .populate('items.product', 'name description photo category')
+    .populate('items.product', 'name description photo category taxPercentage')
     .populate('items.seller', 'name email')
     .sort({ createdAt: -1 });
 
@@ -135,7 +135,7 @@ export const getOrderById = async (req, res) => {
 
     const order = await Order.findById(orderId)
       .populate('customer', 'name email phone')
-      .populate('items.product', 'name description photo category')
+      .populate('items.product', 'name description photo category taxPercentage')
       .populate('items.seller', 'name email');
 
     if (!order) {
@@ -234,6 +234,70 @@ export const updateDeliveryStatus = async (req, res) => {
   }
 };
 
+// Update order items (returns editing: remove or reduce quantities)
+export const updateOrderItems = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { items } = req.body; // expected: [{ product, quantity, variant }]
+
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ error: 'items must be an array' });
+    }
+
+    const order = await Order.findById(orderId).populate('items.product');
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Build a helper to match items by product and variant combination if present
+    const normalizeVariant = (v) => {
+      if (!v || !v.combination) return '';
+      const obj = Object.fromEntries(Object.entries(v.combination).sort(([a],[b]) => a.localeCompare(b)));
+      return JSON.stringify(obj);
+    };
+
+    const requestedMap = new Map();
+    for (const it of items) {
+      if (!it.product || typeof it.quantity !== 'number' || it.quantity < 0) {
+        return res.status(400).json({ error: 'Each item must include product and non-negative quantity' });
+      }
+      const key = `${it.product}::${normalizeVariant(it.variant)}`;
+      requestedMap.set(key, it.quantity);
+    }
+
+    // Update quantities; remove items with 0
+    const updatedItems = [];
+    for (const it of order.items) {
+      const key = `${it.product?._id || it.product}::${normalizeVariant(it.variant)}`;
+      const newQty = requestedMap.has(key) ? requestedMap.get(key) : it.quantity;
+      if (newQty > 0) {
+        it.quantity = newQty;
+        updatedItems.push(it);
+      }
+    }
+
+    order.items = updatedItems;
+
+    // Recalculate totalAmount as sum of (effective unit) * quantity
+    let newTotal = 0;
+    for (const it of order.items) {
+      const unit = (it.discountedPrice && it.discountedPrice < it.price) ? it.discountedPrice : it.price;
+      newTotal += (unit || 0) * (it.quantity || 0);
+    }
+    order.totalAmount = Number(newTotal.toFixed(2));
+
+    await order.save();
+    await order.populate('customer', 'name email phone');
+    await order.populate('items.product', 'name description photo category taxPercentage');
+    await order.populate('items.seller', 'name email');
+
+    return res.status(200).json({ message: 'Order items updated', order });
+  } catch (error) {
+    console.error('Error updating order items:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Get orders for a specific customer
 export const getOrdersByCustomer = async (req, res) => {
   try {
@@ -243,7 +307,7 @@ export const getOrdersByCustomer = async (req, res) => {
       customer: customerId
     })
     .populate('customer', 'name email phone')
-    .populate('items.product', 'name description photo category')
+    .populate('items.product', 'name description photo category taxPercentage')
     .populate('items.seller', 'name email')
     .sort({ createdAt: -1 });
 
@@ -262,7 +326,7 @@ export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
       .populate('customer', 'name email phone')
-      .populate('items.product', 'name description photo category')
+      .populate('items.product', 'name description photo category taxPercentage')
       .populate('items.seller', 'name email')
       .sort({ createdAt: -1 });
 

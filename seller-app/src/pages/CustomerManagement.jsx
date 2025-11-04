@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function CustomerManagement({ user }) {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -13,6 +15,7 @@ export default function CustomerManagement({ user }) {
   const [historyOrders, setHistoryOrders] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
+  // removed per updated UX: inline show/hide details
 
   // Fetch customers when component mounts
   useEffect(() => {
@@ -642,35 +645,54 @@ export default function CustomerManagement({ user }) {
                 {!historyLoading && !historyError && historyOrders.length > 0 && (
                   <div style={{ display: "grid", gap: "1rem" }}>
                     {historyOrders.map((order) => (
-                      <div key={order._id} style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "12px",
-                        padding: "1rem",
-                        background: "#ffffff"
-                      }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                          <div style={{ fontWeight: 600 }}>#{order.orderId || order._id.slice(-6)}</div>
-                          <div style={{ color: "#6b7280" }}>{new Date(order.createdAt).toLocaleString()}</div>
-                        </div>
-                        <div style={{ marginBottom: "0.5rem", color: "#111827", fontWeight: 600 }}>Total: ₹{order.totalAmount}</div>
-                        {Array.isArray(order.items) && order.items.length > 0 && (
-                          <div style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr auto auto",
-                            gap: "0.5rem",
-                            borderTop: "1px solid #e5e7eb",
-                            paddingTop: "0.5rem"
-                          }}>
-                            {order.items.map((it, idx) => (
-                              <div key={idx} style={{ display: "contents" }}>
-                                <div style={{ color: "#111827" }}>{it.product?.name || 'Product'}</div>
-                                <div style={{ color: "#6b7280", textAlign: "right" }}>x{it.quantity}</div>
-                                <div style={{ color: "#111827", textAlign: "right", fontWeight: 500 }}>₹{it.price}</div>
-                              </div>
-                            ))}
+                        <div key={order._id} style={{
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "12px",
+                          padding: "1rem",
+                          background: "#ffffff"
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                            <div style={{ fontWeight: 600 }}>#{order.orderId || order._id.slice(-6)}</div>
+                            <div style={{ color: "#6b7280" }}>{new Date(order.createdAt).toLocaleString()}</div>
                           </div>
-                        )}
-                      </div>
+
+                          <div style={{ marginBottom: "0.5rem", color: "#111827", fontWeight: 600, textAlign: "left" }}>Total: ₹{order.totalAmount}</div>
+
+                          {Array.isArray(order.items) && order.items.length > 0 && (
+                            <div style={{
+                              display: "grid",
+                              gap: "0.5rem",
+                              borderTop: "1px solid #e5e7eb",
+                              paddingTop: "0.5rem",
+                              textAlign: "left"
+                            }}>
+                              {order.items.map((it, idx) => (
+                                <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <div style={{ color: "#111827", fontWeight: 500, marginRight: "0.75rem" }}>{it.product?.name || 'Product'}</div>
+                                  <div style={{ color: "#6b7280", minWidth: 48, textAlign: "left" }}>x{it.quantity}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Controls placed closer to the box, slightly lower */}
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
+                            <button
+                              onClick={() => navigate(`/order/${order._id}`)}
+                              style={{
+                                padding: "0.45rem 0.85rem",
+                                borderRadius: "6px",
+                                border: "1px solid #e5e7eb",
+                                background: "#f3f4f6",
+                                cursor: "pointer",
+                                color: "#111827",
+                                fontWeight: 600
+                              }}
+                            >
+                              View more
+                            </button>
+                          </div>
+                        </div>
                     ))}
                   </div>
                 )}

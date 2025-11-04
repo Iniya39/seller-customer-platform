@@ -6,8 +6,11 @@ export default function ManageOrders({ user }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editItems, setEditItems] = useState([]);
   const [message, setMessage] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 640 : false);
 
   // Fetch orders for the logged-in seller
   useEffect(() => {
@@ -39,6 +42,9 @@ export default function ManageOrders({ user }) {
     };
 
     fetchOrders();
+    const onResize = () => setIsMobile(window.innerWidth <= 640);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, [user]);
 
   // Handle order status update
@@ -76,6 +82,55 @@ export default function ManageOrders({ user }) {
     }
   };
 
+  const openReturnEdit = (order) => {
+    setSelectedOrder(order);
+    setIsEditMode(true);
+    setEditItems((order.items || []).map(it => ({
+      product: it.product?._id || it.product,
+      quantity: it.quantity,
+      variant: it.variant || null
+    })));
+  };
+
+  const setItemQuantity = (index, qty) => {
+    const q = Math.max(0, Math.floor(Number(qty) || 0));
+    setEditItems(prev => prev.map((it, i) => i === index ? { ...it, quantity: q } : it));
+  };
+
+  const removeItem = (index) => {
+    setEditItems(prev => prev.map((it, i) => i === index ? { ...it, quantity: 0 } : it));
+  };
+
+  const saveEditedItems = async () => {
+    try {
+      await axios.put(`http://localhost:5000/api/orders/${selectedOrder._id}/items`, {
+        items: editItems
+      });
+      const refreshed = await axios.get(`http://localhost:5000/api/orders/${selectedOrder._id}`);
+      const updatedOrder = refreshed.data?.order || refreshed.data;
+      // Update orders list and selected
+      setOrders(prev => prev.map(o => o._id === updatedOrder._id ? { ...updatedOrder } : o));
+      setSelectedOrder(updatedOrder);
+      setIsEditMode(false);
+      setMessage('Order updated for returns');
+      setTimeout(() => setMessage(''), 2500);
+    } catch (e) {
+      console.error('Failed to save edited items', e);
+      setMessage('Failed to update order');
+      setTimeout(() => setMessage(''), 2500);
+    }
+  };
+
+  const computeLine = (item) => {
+    const quantity = item?.quantity || 0;
+    const unit = (item?.discountedPrice && item.discountedPrice < item.price) ? item.discountedPrice : item?.price || 0;
+    const taxPct = item?.product?.taxPercentage ?? 0;
+    const lineSubtotal = unit * quantity;
+    const lineTax = (lineSubtotal * taxPct) / 100;
+    const lineTotal = lineSubtotal + lineTax;
+    return { quantity, unit, taxPct, lineSubtotal, lineTax, lineTotal };
+  };
+
   if (loading) {
     return (
       <div style={{ 
@@ -97,20 +152,20 @@ export default function ManageOrders({ user }) {
       justifyContent: "center",
       minHeight: "100vh",
       width: "100%",
-      maxWidth: "1200px",
+      maxWidth: isMobile ? '100%' : "1200px",
       margin: "0 auto",
-      padding: "2rem"
+      padding: isMobile ? "1rem" : "2rem"
     }}>
       <div style={{
         backgroundColor: "rgba(255, 255, 255, 0.1)",
-        padding: "2rem",
+        padding: isMobile ? "1rem" : "2rem",
         borderRadius: "12px",
         boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
         width: "100%",
         textAlign: "center"
       }}>
-        <h2 style={{ marginBottom: "2rem", fontSize: "2rem" }}>Order Management</h2>
-        <p style={{ marginBottom: "2rem", fontSize: "1.1rem", color: "#888" }}>
+        <h2 style={{ marginBottom: isMobile ? "1rem" : "2rem", fontSize: isMobile ? "1.5rem" : "2rem" }}>Order Management</h2>
+        <p style={{ marginBottom: isMobile ? "1rem" : "2rem", fontSize: isMobile ? "0.95rem" : "1.1rem", color: "#888" }}>
           Manage customer orders - Accept or Deny orders
         </p>
 
@@ -132,139 +187,221 @@ export default function ManageOrders({ user }) {
         {orders.length === 0 ? (
           <p style={{ fontSize: "1.1rem", color: "#888" }}>No orders found.</p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ 
-              borderCollapse: "collapse", 
-              width: "100%",
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              borderRadius: "8px",
-              overflow: "hidden"
-            }}>
-              <thead>
-                <tr style={{ backgroundColor: "rgba(100, 108, 255, 0.2)" }}>
-                  <th style={{ padding: "1rem", borderBottom: "1px solid #ccc", fontWeight: "600" }}>Order ID</th>
-                  <th style={{ padding: "1rem", borderBottom: "1px solid #ccc", fontWeight: "600" }}>Customer</th>
-                  <th style={{ padding: "1rem", borderBottom: "1px solid #ccc", fontWeight: "600" }}>Items</th>
-                  <th style={{ padding: "1rem", borderBottom: "1px solid #ccc", fontWeight: "600" }}>Total</th>
-                  <th style={{ padding: "1rem", borderBottom: "1px solid #ccc", fontWeight: "600" }}>Status</th>
-                  <th style={{ padding: "1rem", borderBottom: "1px solid #ccc", fontWeight: "600" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div>
+            {isMobile ? (
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
                 {orders.map(order => (
-                  <tr key={order._id} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.1)" }}>
-                    <td style={{ padding: "1rem", fontSize: "0.9rem" }}>{order.orderId}</td>
-                    <td style={{ padding: "1rem" }}>
-                      <div>
-                        <div style={{ fontWeight: "600" }}>{order.customerDetails?.name}</div>
-                        <div style={{ fontSize: "0.8rem", color: "#888" }}>{order.customerDetails?.email}</div>
-                      </div>
-                    </td>
-                    <td style={{ padding: "1rem" }}>
-                      <div style={{ fontSize: "0.9rem" }}>
-                        {order.items?.length} item(s)
-                      </div>
-                    </td>
-                    <td style={{ padding: "1rem", fontWeight: "600" }}>₹{order.totalAmount?.toFixed(2)}</td>
-                    <td style={{ padding: "1rem" }}>
-                      {order.status === 'pending' ? (
-                        <div style={{ display: "flex", gap: "0.5rem" }}>
-                          <button 
+                  <div key={order._id} style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    borderRadius: '10px',
+                    padding: '0.75rem',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>#{order.orderId}</div>
+                      <span style={{
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '9999px',
+                        backgroundColor: getStatusColor(order.status),
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        fontWeight: 600
+                      }}>
+                        {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
+                      </span>
+                    </div>
+                    <div style={{ color: '#d1d5db', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{order.customerDetails?.name}</div>
+                    <div style={{ color: '#9ca3af', fontSize: '0.8rem', marginBottom: '0.5rem' }}>{order.items?.length} item(s) • ₹{order.totalAmount?.toFixed(2)}</div>
+                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                          {order.status === 'pending' ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                          <button
                             onClick={() => handleStatusUpdate(order._id, 'accepted')}
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              borderRadius: "6px",
-                              fontSize: "0.8rem",
-                              fontWeight: "500",
-                              cursor: "pointer",
-                              backgroundColor: "#22c55e",
-                              color: "white",
-                              border: "none",
-                              transition: "all 0.3s ease"
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = "#16a34a"}
-                            onMouseOut={(e) => e.target.style.backgroundColor = "#22c55e"}
-                          >
-                            Accept
-                          </button>
-                          <button 
+                            style={{ padding: '0.6rem', borderRadius: '8px', border: 'none', background: '#22c55e', color: 'white', fontWeight: 600 }}
+                          >Accept</button>
+                          <button
                             onClick={() => handleStatusUpdate(order._id, 'cancelled')}
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              borderRadius: "6px",
-                              fontSize: "0.8rem",
-                              fontWeight: "500",
-                              cursor: "pointer",
-                              backgroundColor: "#ef4444",
-                              color: "white",
-                              border: "none",
-                              transition: "all 0.3s ease"
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = "#dc2626"}
-                            onMouseOut={(e) => e.target.style.backgroundColor = "#ef4444"}
-                          >
-                            Deny
-                          </button>
+                            style={{ padding: '0.6rem', borderRadius: '8px', border: 'none', background: '#ef4444', color: 'white', fontWeight: 600 }}
+                          >Deny</button>
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{
-                            padding: "0.25rem 0.75rem",
-                            borderRadius: "12px",
-                            backgroundColor: getStatusColor(order.status),
-                            color: "white",
-                            fontSize: "0.8rem",
-                            fontWeight: "500"
-                          }}>
-                            {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
-                          </span>
+                        <>
                           {order.status === 'accepted' && (
                             <button
                               onClick={() => handleStatusUpdate(order._id, 'delivered')}
-                              style={{
+                              style={{ padding: '0.6rem', borderRadius: '8px', border: 'none', background: '#059669', color: 'white', fontWeight: 600, width: '100%' }}
+                            >Mark Delivered</button>
+                          )}
+                          {order.status === 'delivered' && (
+                            <button
+                              onClick={() => openReturnEdit(order)}
+                              style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#ffffff', color: '#111827', fontWeight: 600, width: '100%' }}
+                            >Returned</button>
+                          )}
+                        </>
+                      )}
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #646cff', background: 'transparent', color: 'white', fontWeight: 600 }}
+                      >View Details</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ 
+                  borderCollapse: 'collapse', 
+                  width: '100%',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '8px',
+                  overflow: 'hidden'
+                }}>
+                  <thead>
+                    <tr style={{ backgroundColor: 'rgba(100, 108, 255, 0.2)' }}>
+                      <th style={{ padding: '1rem', borderBottom: '1px solid #ccc', fontWeight: '600' }}>Order ID</th>
+                      <th style={{ padding: '1rem', borderBottom: '1px solid #ccc', fontWeight: '600' }}>Customer</th>
+                      <th style={{ padding: '1rem', borderBottom: '1px solid #ccc', fontWeight: '600' }}>Items</th>
+                      <th style={{ padding: '1rem', borderBottom: '1px solid #ccc', fontWeight: '600' }}>Total</th>
+                      <th style={{ padding: '1rem', borderBottom: '1px solid #ccc', fontWeight: '600' }}>Status</th>
+                      <th style={{ padding: '1rem', borderBottom: '1px solid #ccc', fontWeight: '600' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map(order => (
+                      <tr key={order._id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                        <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{order.orderId}</td>
+                        <td style={{ padding: '1rem' }}>
+                          <div>
+                            <div style={{ fontWeight: '600' }}>{order.customerDetails?.name}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#888' }}>{order.customerDetails?.email}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <div style={{ fontSize: '0.9rem' }}>
+                            {order.items?.length} item(s)
+                          </div>
+                        </td>
+                        <td style={{ padding: '1rem', fontWeight: '600' }}>₹{order.totalAmount?.toFixed(2)}</td>
+                        <td style={{ padding: '1rem' }}>
+                          {order.status === 'pending' ? (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button 
+                                onClick={() => handleStatusUpdate(order._id, 'accepted')}
+                                style={{
+                                  padding: '0.25rem 0.75rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                  backgroundColor: '#22c55e',
+                                  color: 'white',
+                                  border: 'none',
+                                  transition: 'all 0.3s ease'
+                                }}
+                                onMouseOver={(e) => e.target.style.backgroundColor = '#16a34a'}
+                                onMouseOut={(e) => e.target.style.backgroundColor = '#22c55e'}
+                              >
+                                Accept
+                              </button>
+                              <button 
+                                onClick={() => handleStatusUpdate(order._id, 'cancelled')}
+                                style={{
+                                  padding: '0.25rem 0.75rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                  backgroundColor: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  transition: 'all 0.3s ease'
+                                }}
+                                onMouseOver={(e) => e.target.style.backgroundColor = '#dc2626'}
+                                onMouseOut={(e) => e.target.style.backgroundColor = '#ef4444'}
+                              >
+                                Deny
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{
                                 padding: '0.25rem 0.75rem',
+                                borderRadius: '12px',
+                                backgroundColor: getStatusColor(order.status),
+                                color: 'white',
+                                fontSize: '0.8rem',
+                                fontWeight: '500'
+                              }}>
+                                {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
+                              </span>
+                              {order.status === 'accepted' && (
+                                <button
+                                  onClick={() => handleStatusUpdate(order._id, 'delivered')}
+                                  style={{
+                                    padding: '0.25rem 0.75rem',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    backgroundColor: '#059669',
+                                    color: 'white',
+                                    border: 'none',
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                  onMouseOver={(e) => e.target.style.backgroundColor = '#047857'}
+                                  onMouseOut={(e) => e.target.style.backgroundColor = '#059669'}
+                                >
+                                  Mark Delivered
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <button 
+                            onClick={() => setSelectedOrder(order)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              backgroundColor: '#646cff',
+                              color: 'white',
+                              border: 'none',
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseOver={(e) => e.target.style.backgroundColor = '#535bf2'}
+                            onMouseOut={(e) => e.target.style.backgroundColor = '#646cff'}
+                          >
+                            View Details
+                          </button>
+                          {order.status === 'delivered' && (
+                            <button 
+                              onClick={() => openReturnEdit(order)}
+                              style={{
+                                padding: '0.5rem 1rem',
                                 borderRadius: '6px',
                                 fontSize: '0.8rem',
                                 fontWeight: '500',
                                 cursor: 'pointer',
-                                backgroundColor: '#059669',
-                                color: 'white',
-                                border: 'none',
-                                transition: 'all 0.3s ease'
+                                backgroundColor: '#ffffff',
+                                color: '#111827',
+                                border: '1px solid #e2e8f0',
+                                marginLeft: '0.5rem'
                               }}
-                              onMouseOver={(e) => e.target.style.backgroundColor = '#047857'}
-                              onMouseOut={(e) => e.target.style.backgroundColor = '#059669'}
                             >
-                              Mark Delivered
+                              Returned
                             </button>
                           )}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: "1rem" }}>
-                      <button 
-                        onClick={() => setSelectedOrder(order)}
-                        style={{
-                          padding: "0.5rem 1rem",
-                          borderRadius: "6px",
-                          fontSize: "0.8rem",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                          backgroundColor: "#646cff",
-                          color: "white",
-                          border: "none",
-                          transition: "all 0.3s ease"
-                        }}
-                        onMouseOver={(e) => e.target.style.backgroundColor = "#535bf2"}
-                        onMouseOut={(e) => e.target.style.backgroundColor = "#646cff"}
-                      >
-                        View Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -411,7 +548,7 @@ export default function ManageOrders({ user }) {
               </div>
             </div>
 
-            {/* Order Items */}
+            {/* Order Items with tax details and returns edit */}
             <div style={{ marginBottom: "2rem" }}>
               <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Items</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -446,12 +583,7 @@ export default function ManageOrders({ user }) {
                         }}>
                           {item.product?.name || 'Product Name'}
                         </div>
-                        <div style={{ 
-                          fontSize: "0.9rem", 
-                          color: "#6b7280", 
-                          marginBottom: "0.75rem",
-                          lineHeight: "1.4"
-                        }}>
+                        <div style={{ fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem", lineHeight: "1.4" }}>
                           {item.product?.description || 'No description available'}
                         </div>
                         
@@ -470,30 +602,42 @@ export default function ManageOrders({ user }) {
                             {Object.entries(item.variant.combination).map(([key, value]) => `${key}: ${value}`).join(', ')}
                           </div>
                         )}
-                        <div style={{ 
-                          display: "flex", 
-                          justifyContent: "space-between", 
-                          alignItems: "center",
-                          flexWrap: "wrap",
-                          gap: "0.5rem"
-                        }}>
-                          <div style={{ fontSize: "0.9rem", color: "#374151" }}>
-                            <span style={{ fontWeight: "500" }}>Quantity:</span> {item.quantity}
+                        {(() => {
+                          const { quantity, unit, taxPct, lineSubtotal, lineTax, lineTotal } = computeLine(item);
+                          return (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.5rem", alignItems: "center" }}>
+                              <div style={{ fontSize: "0.9rem", color: "#374151" }}>
+                                <span style={{ fontWeight: 500 }}>Quantity:</span> {quantity}
+                              </div>
+                              <div style={{ fontSize: "0.9rem", color: "#374151" }}>
+                                <span style={{ fontWeight: 500 }}>Unit Price:</span> ₹{unit}
+                              </div>
+                              <div style={{ fontSize: "0.9rem", color: "#374151" }}>
+                                <span style={{ fontWeight: 500 }}>Tax:</span> {taxPct}% (₹{lineTax.toFixed(2)})
+                              </div>
+                              <div style={{ fontSize: "1rem", fontWeight: 600, color: "#111827", backgroundColor: "#f3f4f6", padding: "0.25rem 0.75rem", borderRadius: 6 }}>
+                                Line Total: ₹{lineTotal.toFixed(2)}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {isEditMode && (
+                          <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <label style={{ color: '#374151', fontSize: '0.9rem' }}>Edit quantity:</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={editItems[index]?.quantity ?? item.quantity}
+                              onChange={(e) => setItemQuantity(index, e.target.value)}
+                              style={{ width: '90px', padding: '0.35rem 0.5rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                            />
+                            <button
+                              onClick={() => removeItem(index)}
+                              style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid #ef4444', background: '#fff1f2', color: '#b91c1c', fontWeight: 600 }}
+                            >Remove</button>
                           </div>
-                          <div style={{ fontSize: "0.9rem", color: "#374151" }}>
-                            <span style={{ fontWeight: "500" }}>Unit Price:</span> ₹{item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price}
-                          </div>
-                          <div style={{ 
-                            fontSize: "1rem", 
-                            fontWeight: "600", 
-                            color: "#111827",
-                            backgroundColor: "#f3f4f6",
-                            padding: "0.25rem 0.75rem",
-                            borderRadius: "6px"
-                          }}>
-                            Total: ₹{((item.discountedPrice && item.discountedPrice < item.price ? item.discountedPrice : item.price) * item.quantity).toFixed(2)}
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -501,61 +645,53 @@ export default function ManageOrders({ user }) {
               </div>
             </div>
 
-            {/* Order Summary */}
+            {/* Order Summary with tax */}
             <div style={{ marginBottom: "2rem" }}>
               <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Summary</h3>
               <div style={{ 
-                padding: "1.5rem", 
+                padding: "1rem", 
                 background: "#f8fafc", 
                 borderRadius: "12px",
-                border: "1px solid #e2e8f0"
+                border: "1px solid #e2e8f0",
+                width: '100%'
               }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  <div style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center",
-                    padding: "0.5rem 0"
-                  }}>
-                    <span style={{ color: "#374151", fontSize: "0.95rem" }}>Subtotal:</span>
-                    <span style={{ color: "#374151", fontWeight: "500" }}>₹{selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
-                  </div>
-                  <div style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center",
-                    padding: "0.5rem 0"
-                  }}>
-                    <span style={{ color: "#374151", fontSize: "0.95rem" }}>Shipping:</span>
-                    <span style={{ color: "#059669", fontWeight: "600" }}>Free</span>
-                  </div>
-                  <div style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center",
-                    padding: "0.5rem 0"
-                  }}>
-                    <span style={{ color: "#374151", fontSize: "0.95rem" }}>Tax:</span>
-                    <span style={{ color: "#374151", fontWeight: "500" }}>₹0.00</span>
-                  </div>
-                  <hr style={{ 
-                    border: "none", 
-                    borderTop: "2px solid #e5e7eb", 
-                    margin: "0.5rem 0" 
-                  }} />
-                  <div style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center",
-                    backgroundColor: "#f3f4f6",
-                    borderRadius: "8px",
-                    padding: "1rem",
-                    marginTop: "0.5rem"
-                  }}>
-                    <span style={{ fontSize: "1.1rem", fontWeight: "700", color: "#111827" }}>Total:</span>
-                    <span style={{ fontSize: "1.2rem", fontWeight: "700", color: "#111827" }}>₹{selectedOrder.totalAmount?.toFixed(2) || '0.00'}</span>
-                  </div>
-                </div>
+                {(() => {
+                  const lines = (selectedOrder.items || []).map(computeLine);
+                  const subtotal = lines.reduce((s, l) => s + l.lineSubtotal, 0);
+                  const totalTax = lines.reduce((s, l) => s + l.lineTax, 0);
+                  const grandTotal = subtotal + totalTax;
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {/* Per-item tax rows */}
+                      {(selectedOrder.items || []).map((it, idx) => {
+                        const { taxPct, lineSubtotal, lineTax } = computeLine(it);
+                        return (
+                          <div key={`tax-${idx}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0' }}>
+                            <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>{it.product?.name || 'Product'} (Tax {taxPct}%)</span>
+                            <span style={{ color: '#111827', fontSize: '0.9rem' }}>₹{lineSubtotal.toFixed(2)} + ₹{lineTax.toFixed(2)}</span>
+                          </div>
+                        );
+                      })}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
+                        <span style={{ color: "#374151", fontSize: "0.9rem" }}>Subtotal:</span>
+                        <span style={{ color: "#374151", fontWeight: "500", fontSize: '0.95rem' }}>₹{subtotal.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
+                        <span style={{ color: "#374151", fontSize: "0.9rem" }}>Total Tax:</span>
+                        <span style={{ color: "#374151", fontWeight: "500", fontSize: '0.95rem' }}>₹{totalTax.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
+                        <span style={{ color: "#374151", fontSize: "0.9rem" }}>Shipping:</span>
+                        <span style={{ color: "#059669", fontWeight: "600", fontSize: '0.95rem' }}>Free</span>
+                      </div>
+                      <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0.4rem 0" }} />
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#f3f4f6", borderRadius: "8px", padding: "0.75rem", marginTop: "0.25rem" }}>
+                        <span style={{ fontSize: "1rem", fontWeight: "700", color: "#111827" }}>Total:</span>
+                        <span style={{ fontSize: "1.1rem", fontWeight: "700", color: "#111827" }}>₹{grandTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -595,8 +731,8 @@ export default function ManageOrders({ user }) {
 
 
             {/* Action Buttons */}
-            <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
-              {selectedOrder.status === 'pending' && (
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: 'wrap' }}>
+              {!isEditMode && selectedOrder.status === 'pending' && (
                 <>
                   <button 
                     onClick={() => handleStatusUpdate(selectedOrder._id, 'accepted')}
@@ -637,7 +773,7 @@ export default function ManageOrders({ user }) {
                 </>
               )}
 
-              {selectedOrder.status === 'accepted' && (
+              {!isEditMode && selectedOrder.status === 'accepted' && (
                 <button 
                   onClick={() => handleStatusUpdate(selectedOrder._id, 'delivered')}
                   style={{
@@ -656,6 +792,60 @@ export default function ManageOrders({ user }) {
                 >
                   Mark as Delivered
                 </button>
+              )}
+
+              {!isEditMode && selectedOrder.status === 'delivered' && (
+                <button 
+                  onClick={() => openReturnEdit(selectedOrder)}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    backgroundColor: "#ffffff",
+                    color: "#111827",
+                    border: "1px solid #e2e8f0",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  Returned
+                </button>
+              )}
+
+              {isEditMode && (
+                <>
+                  <button 
+                    onClick={saveEditedItems}
+                    style={{
+                      padding: "0.75rem 1.5rem",
+                      borderRadius: "8px",
+                      fontSize: "1rem",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      backgroundColor: "#3b82f6",
+                      color: "white",
+                      border: "none"
+                    }}
+                  >
+                    Save Changes
+                  </button>
+                  <button 
+                    onClick={() => { setIsEditMode(false); setEditItems([]); }}
+                    style={{
+                      padding: "0.75rem 1.5rem",
+                      borderRadius: "8px",
+                      fontSize: "1rem",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      backgroundColor: "#6b7280",
+                      color: "white",
+                      border: "none"
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </>
               )}
             </div>
           </div>
