@@ -205,7 +205,7 @@ export const getAllProducts = async (req, res) => {
     
     const products = await Product.find(filter)
       .populate('seller', 'name email')
-      .sort({ createdAt: -1 })
+      .sort({ displayOrder: 1, createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
@@ -436,6 +436,40 @@ export const deleteProduct = async (req, res) => {
     console.error('Error deleting product:', error);
     res.status(500).json({ 
       error: 'Failed to delete product',
+      details: error.message 
+    });
+  }
+};
+
+// Update product display order (for arranging products within category)
+export const updateProductOrder = async (req, res) => {
+  try {
+    const { productIds } = req.body; // Array of product IDs in desired order
+
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ error: 'productIds array is required' });
+    }
+
+    // Update displayOrder for each product based on its position in the array
+    const updatePromises = productIds.map((productId, index) => {
+      return Product.findByIdAndUpdate(
+        productId,
+        { displayOrder: index },
+        { new: true }
+      );
+    });
+
+    await Promise.all(updatePromises);
+
+    res.json({ 
+      message: 'Product order updated successfully',
+      products: productIds 
+    });
+
+  } catch (error) {
+    console.error('Error updating product order:', error);
+    res.status(500).json({ 
+      error: 'Failed to update product order',
       details: error.message 
     });
   }

@@ -6,7 +6,8 @@ import {
   getProductById,
   updateProduct,
   deleteProduct,
-  getProductsBySeller
+  getProductsBySeller,
+  updateProductOrder
 } from '../controllers/productController.js';
 import multer from 'multer';
 import path from 'path';
@@ -48,6 +49,7 @@ router.put('/:id', upload.fields([
   { name: 'photo', maxCount: 1 },
   { name: 'photos', maxCount: 10 }
 ]), updateProduct);                  // Update product
+router.put('/order/update', updateProductOrder);    // Update product display order
 router.delete('/:id', deleteProduct);               // Delete product (soft delete)
 
 export default router;

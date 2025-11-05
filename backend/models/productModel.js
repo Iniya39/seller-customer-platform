@@ -149,6 +149,11 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // Display order within category (for seller arrangement)
+  displayOrder: {
+    type: Number,
+    default: 0
+  },
   // Additional fields for each category
   specifications: {
     type: Map,
