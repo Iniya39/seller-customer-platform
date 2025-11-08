@@ -413,6 +413,10 @@ export default function OrdersPage() {
                 </div>
 
                 <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/order/${order._id}`);
+                  }}
                   style={{
                     marginTop: '1rem',
                     padding: '0.75rem 1.5rem',

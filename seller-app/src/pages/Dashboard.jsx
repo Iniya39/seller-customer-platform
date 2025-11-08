@@ -11,6 +11,9 @@ export default function Dashboard({ user }) {
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [unreadOrderCount, setUnreadOrderCount] = useState(0);
+  const [arrangeMode, setArrangeMode] = useState({}); // per-category arrange mode
+  const [dragState, setDragState] = useState({ category: null, productId: null });
+  const [categoryBuffers, setCategoryBuffers] = useState({}); // local per-category order while arranging
   
 
   // Fetch products when component mounts
@@ -65,7 +68,7 @@ export default function Dashboard({ user }) {
 
   
 
-  // Group products by category
+  // Group products by category and sort by displayOrder
   const groupedProducts = products.reduce((groups, product) => {
     const category = product.category;
     if (!groups[category]) {
@@ -74,6 +77,15 @@ export default function Dashboard({ user }) {
     groups[category].push(product);
     return groups;
   }, {});
+  
+  // Sort products within each category by displayOrder
+  Object.keys(groupedProducts).forEach(category => {
+    groupedProducts[category].sort((a, b) => {
+      const orderA = a.displayOrder !== undefined ? a.displayOrder : 999999;
+      const orderB = b.displayOrder !== undefined ? b.displayOrder : 999999;
+      return orderA - orderB;
+    });
+  });
 
   // (Removed modal filtering and grouping)
 
@@ -274,29 +286,191 @@ export default function Dashboard({ user }) {
                   );
                 });
                 if (filtered.length === 0) return null;
+                
+                // Sort filtered products by displayOrder
+                const sortedFiltered = [...filtered].sort((a, b) => {
+                  const orderA = a.displayOrder !== undefined ? a.displayOrder : 999999;
+                  const orderB = b.displayOrder !== undefined ? b.displayOrder : 999999;
+                  return orderA - orderB;
+                });
+                
+                const isArranging = !!arrangeMode[category];
+                const buffer = categoryBuffers[category] || sortedFiltered;
+                const displayItems = isArranging ? buffer : sortedFiltered;
+                
+                const onDragStart = (product) => (e) => {
+                  if (!isArranging) return;
+                  setDragState({ category, productId: product._id });
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", product._id);
+                };
+
+                const onDragOver = (target) => (e) => {
+                  if (!isArranging) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                };
+
+                const onDrop = (target) => (e) => {
+                  if (!isArranging) return;
+                  e.preventDefault();
+                  const sourceId = dragState.productId;
+                  if (!sourceId || !buffer) return;
+                  const fromIdx = buffer.findIndex((p) => p._id === sourceId);
+                  const toIdx = buffer.findIndex((p) => p._id === target._id);
+                  if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+                  const newBuf = [...buffer];
+                  const [moved] = newBuf.splice(fromIdx, 1);
+                  newBuf.splice(toIdx, 0, moved);
+                  setCategoryBuffers((prev) => ({ ...prev, [category]: newBuf }));
+                  setDragState({ category: null, productId: null });
+                };
+
+                const startArrange = () => {
+                  setArrangeMode((prev) => ({ ...prev, [category]: true }));
+                  setCategoryBuffers((prev) => ({ ...prev, [category]: sortedFiltered.slice() }));
+                };
+
+                const cancelArrange = () => {
+                  setArrangeMode((prev) => ({ ...prev, [category]: false }));
+                  setCategoryBuffers((prev) => {
+                    const copy = { ...prev };
+                    delete copy[category];
+                    return copy;
+                  });
+                  setDragState({ category: null, productId: null });
+                };
+
+                const saveArrange = async () => {
+                  try {
+                    const orderedIds = (categoryBuffers[category] || []).map((p) => p._id);
+                    await axios.put("http://localhost:5000/api/products/order/update", { productIds: orderedIds });
+                    alert("Order saved successfully!");
+                    setArrangeMode((prev) => ({ ...prev, [category]: false }));
+                    setCategoryBuffers((prev) => {
+                      const copy = { ...prev };
+                      delete copy[category];
+                      return copy;
+                    });
+                    // Refresh products to reflect displayOrder from backend
+                    const response = await axios.get(`http://localhost:5000/api/products/seller/${user?._id}`);
+                    setProducts(response.data);
+                  } catch (err) {
+                    alert("Failed to save order: " + err.message);
+                  }
+                };
+                
                 return (
                 <div key={category} style={{ marginBottom: "2rem" }}>
-                  <h3 style={{ 
-                    color: "#646cff", 
-                    fontSize: "1.5rem", 
-                    marginBottom: "1rem",
-                    borderBottom: "2px solid #646cff",
-                    paddingBottom: "0.5rem"
+                  <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center",
+                    marginBottom: "1rem"
                   }}>
-                    {category} ({filtered.length} items)
-                  </h3>
+                    <h3 style={{ 
+                      color: "#646cff", 
+                      fontSize: "1.5rem", 
+                      margin: 0,
+                      borderBottom: "2px solid #646cff",
+                      paddingBottom: "0.5rem",
+                      flex: 1
+                    }}>
+                      {category} ({filtered.length} items)
+                    </h3>
+                    {!isArranging ? (
+                      <button 
+                        onClick={startArrange} 
+                        style={{ 
+                          padding: "0.4rem 0.8rem", 
+                          border: "1px solid #6366f1", 
+                          background: "white", 
+                          color: "#6366f1", 
+                          borderRadius: 8, 
+                          cursor: "pointer",
+                          marginLeft: "1rem",
+                          fontSize: "0.9rem",
+                          fontWeight: "500"
+                        }}
+                      >
+                        Arrange Products
+                      </button>
+                    ) : (
+                      <div style={{ display: "flex", gap: "0.5rem", marginLeft: "1rem" }}>
+                        <button 
+                          onClick={saveArrange} 
+                          style={{ 
+                            padding: "0.4rem 0.8rem", 
+                            border: "none", 
+                            background: "#10b981", 
+                            color: "white", 
+                            borderRadius: 8, 
+                            cursor: "pointer",
+                            fontSize: "0.9rem",
+                            fontWeight: "500"
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button 
+                          onClick={cancelArrange} 
+                          style={{ 
+                            padding: "0.4rem 0.8rem", 
+                            border: "1px solid #ef4444", 
+                            background: "white", 
+                            color: "#ef4444", 
+                            borderRadius: 8, 
+                            cursor: "pointer",
+                            fontSize: "0.9rem",
+                            fontWeight: "500"
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <div style={{ 
                     display: "grid", 
                     gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
                     gap: "1rem" 
                   }}>
-                    {filtered.map((product) => (
-                      <div key={product._id} style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.05)",
-                        padding: "1rem",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(255, 255, 255, 0.1)"
-                      }}>
+                    {displayItems.map((product, idx) => (
+                      <div 
+                        key={product._id} 
+                        draggable={isArranging}
+                        onDragStart={onDragStart(product)}
+                        onDragOver={onDragOver(product)}
+                        onDrop={onDrop(product)}
+                        style={{
+                          backgroundColor: "rgba(255, 255, 255, 0.05)",
+                          padding: "1rem",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          cursor: isArranging ? "move" : "default",
+                          position: "relative"
+                        }}
+                      >
+                        {isArranging && (
+                          <div style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            background: "#6366f1",
+                            color: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 700,
+                            fontSize: 12,
+                            zIndex: 10
+                          }}>
+                            {idx + 1}
+                          </div>
+                        )}
                         {product.photo && (
                           <div style={{ marginBottom: "0.75rem" }}>
                             <img 

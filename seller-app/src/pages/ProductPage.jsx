@@ -65,9 +65,15 @@ export default function ProductPage() {
             return acc;
           }, {})
         ).map(([category, items]) => {
+          // Sort items by displayOrder (backend should already sort, but ensure it here too)
+          const sortedItems = [...items].sort((a, b) => {
+            const orderA = a.displayOrder !== undefined ? a.displayOrder : 999999;
+            const orderB = b.displayOrder !== undefined ? b.displayOrder : 999999;
+            return orderA - orderB;
+          });
           const isArranging = !!arrangeMode[category];
-          const buffer = categoryBuffers[category] || items;
-          const displayItems = isArranging ? buffer : items;
+          const buffer = categoryBuffers[category] || sortedItems;
+          const displayItems = isArranging ? buffer : sortedItems;
 
           const onDragStart = (product) => (e) => {
             if (!isArranging) return;
@@ -99,7 +105,7 @@ export default function ProductPage() {
 
           const startArrange = () => {
             setArrangeMode((prev) => ({ ...prev, [category]: true }));
-            setCategoryBuffers((prev) => ({ ...prev, [category]: items.slice() }));
+            setCategoryBuffers((prev) => ({ ...prev, [category]: sortedItems.slice() }));
           };
 
           const cancelArrange = () => {
@@ -135,7 +141,7 @@ export default function ProductPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
                 <h2 style={{ margin: 0 }}>{category}</h2>
                 {!isArranging ? (
-                  <button onClick={startArrange} style={{ padding: "0.4rem 0.8rem", border: "1px solid #6366f1", background: "white", color: "#6366f1", borderRadius: 8, cursor: "pointer" }}>Arrange Items</button>
+                  <button onClick={startArrange} style={{ padding: "0.4rem 0.8rem", border: "1px solid #6366f1", background: "white", color: "#6366f1", borderRadius: 8, cursor: "pointer" }}>Arrange Products</button>
                 ) : (
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button onClick={saveArrange} style={{ padding: "0.4rem 0.8rem", border: "none", background: "#10b981", color: "white", borderRadius: 8, cursor: "pointer" }}>Save</button>

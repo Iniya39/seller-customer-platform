@@ -140,6 +140,15 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
     acc[product.category].push(product)
     return acc
   }, {})
+  
+  // Sort products within each category by displayOrder
+  Object.keys(productsByCategory).forEach(category => {
+    productsByCategory[category].sort((a, b) => {
+      const orderA = a.displayOrder !== undefined ? a.displayOrder : 999999;
+      const orderB = b.displayOrder !== undefined ? b.displayOrder : 999999;
+      return orderA - orderB;
+    });
+  });
 
   // Handle attribute selection for multi-attribute products
   const handleAttributeSelection = (attributeName, optionName) => {

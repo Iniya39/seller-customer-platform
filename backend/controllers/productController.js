@@ -489,7 +489,7 @@ export const getProductsBySeller = async (req, res) => {
       isActive: true 
     })
       .populate('seller', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ displayOrder: 1, createdAt: -1 });
 
     res.json(products);
 
