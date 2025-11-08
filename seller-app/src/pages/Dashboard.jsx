@@ -16,22 +16,37 @@ export default function Dashboard({ user }) {
   const [categoryBuffers, setCategoryBuffers] = useState({}); // local per-category order while arranging
   
 
+  // Fetch products function
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/products/seller/${user?._id}`);
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch products when component mounts
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/products/seller/${user?._id}`);
-        setProducts(response.data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (user?._id) {
       fetchProducts();
     }
+  }, [user?._id]);
+
+  // Listen for category updates and refresh products
+  useEffect(() => {
+    const handleCategoryUpdate = () => {
+      if (user?._id) {
+        fetchProducts();
+      }
+    };
+
+    window.addEventListener('categoryUpdated', handleCategoryUpdate);
+    return () => {
+      window.removeEventListener('categoryUpdated', handleCategoryUpdate);
+    };
   }, [user?._id]);
 
   // Fetch unread order count
@@ -496,10 +511,6 @@ export default function Dashboard({ user }) {
                         <div style={{ marginBottom: "0.5rem" }}>
                           <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Description</div>
                           <div style={{ color: "#ccc" }}>{product.description}</div>
-                        </div>
-                        <div style={{ marginBottom: "0.5rem" }}>
-                          <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Stock Status</div>
-                          <div style={{ color: "#fff" }}>{product.stockStatus || product.hasVariations ? 'Has Variations' : 'Standard'}</div>
                         </div>
                         <div style={{ marginBottom: "1rem" }}>
                           <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Price</div>

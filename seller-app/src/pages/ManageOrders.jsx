@@ -122,13 +122,8 @@ export default function ManageOrders({ user }) {
   const saveEditedItems = async () => {
     try {
       // Filter out items with quantity 0 before sending
+      // Allow empty array - seller can remove all products
       const itemsToSave = editItems.filter(it => it.quantity > 0);
-      
-      if (itemsToSave.length === 0) {
-        setMessage('Order must have at least one item');
-        setTimeout(() => setMessage(''), 3000);
-        return;
-      }
 
       const response = await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/${selectedOrder._id}/items`, {
         items: itemsToSave

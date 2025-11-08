@@ -236,7 +236,10 @@ export default function OrdersPage() {
         {(() => {
           const filteredOrders = orders.filter(order => {
             if (activeFilter === 'all') return true
-            if (activeFilter === 'delivered') return isDelivered(order)
+            if (activeFilter === 'delivered') {
+              // Don't show in delivered filter if all items are returned
+              return isDelivered(order) && !allItemsReturned(order)
+            }
             if (activeFilter === 'returned') return hasReturnedItems(order)
             return order.status === activeFilter
           })
@@ -415,9 +418,10 @@ export default function OrdersPage() {
                         Delivered
                       </span>
                     )}
-                    {/* Show Returned badge next to Delivered if order has returned items and is delivered */}
-                    {/* Or show Returned alone if all items are returned */}
-                    {isDelivered(order) && hasReturnedItems(order) && (
+                    {/* Show Returned badge:
+                        - Next to Delivered if order has returned items but not all are returned
+                        - Alone if all items are returned (even if delivered status) */}
+                    {hasReturnedItems(order) && (
                       <span style={{
                         padding: '0.5rem 1rem',
                         borderRadius: '8px',
@@ -429,8 +433,8 @@ export default function OrdersPage() {
                         Returned
                       </span>
                     )}
-                    {/* Show status badge if order is not delivered */}
-                    {!isDelivered(order) && (
+                    {/* Show status badge if order is not delivered and not all items are returned */}
+                    {!isDelivered(order) && !allItemsReturned(order) && (
                       <span style={{
                         padding: '0.5rem 1rem',
                         borderRadius: '8px',

@@ -33,6 +33,8 @@ export default function AddItem({ user }) {
   const [categories, setCategories] = useState([]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryData, setEditCategoryData] = useState({ name: '', description: '' });
   const [photos, setPhotos] = useState([]);
   const [photoFiles, setPhotoFiles] = useState([]);
   const navigate = useNavigate();
@@ -144,6 +146,69 @@ export default function AddItem({ user }) {
       console.error('Error adding category:', error);
       alert('Error adding category: ' + (error.response?.data?.error || error.message));
     }
+  };
+
+  // Start editing category
+  const startEditCategory = (category) => {
+    setEditingCategory(category);
+    setEditCategoryData({
+      name: category.name || '',
+      description: category.description || ''
+    });
+  };
+
+  // Save edited category
+  const saveEditCategory = async () => {
+    if (!editCategoryData.name.trim()) {
+      alert('Category name is required');
+      return;
+    }
+
+    try {
+      const catId = editingCategory._id || editingCategory.id;
+      if (!catId) {
+        alert('Category ID not found');
+        return;
+      }
+
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/categories/${catId}`,
+        editCategoryData
+      );
+
+      // Update categories list
+      setCategories(prev => prev.map(cat => 
+        cat._id === catId ? response.data.category : cat
+      ));
+
+      // If category name changed and it was selected, update selection
+      if (selectedCategory === editingCategory.name && editCategoryData.name !== editingCategory.name) {
+        setSelectedCategory(editCategoryData.name);
+      }
+
+      setEditingCategory(null);
+      setEditCategoryData({ name: '', description: '' });
+      
+      // Trigger a custom event to notify other components (like Dashboard) to refresh products
+      // This ensures the updated category name is reflected in the view products page
+      window.dispatchEvent(new CustomEvent('categoryUpdated', { 
+        detail: { 
+          oldName: editingCategory.name, 
+          newName: editCategoryData.name 
+        } 
+      }));
+      
+      alert('Category updated successfully. Products will be refreshed automatically.');
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Error updating category: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  // Cancel editing category
+  const cancelEditCategory = () => {
+    setEditingCategory(null);
+    setEditCategoryData({ name: '', description: '' });
   };
 
   // Load categories on component mount
@@ -606,34 +671,68 @@ export default function AddItem({ user }) {
             }}
           >
             {/* Category Name */}
-            {cat.name || cat}
+            <div style={{ marginBottom: cat.description ? '0.5rem' : '0' }}>
+              {cat.name || cat}
+            </div>
+            {/* Category Description */}
+            {cat.description && (
+              <div style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.25rem" }}>
+                {cat.description}
+              </div>
+            )}
 
-            {/* Delete Category Button */}
+            {/* Edit and Delete Category Buttons */}
             {cat._id && (
-              <button
-                type="button"
-                title="Delete category"
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  handleDeleteCategory(cat);
-                }}
-                style={{
-                  position: "absolute",
-                  top: "8px",
-                  right: "8px",
-                  padding: "0.35rem 0.6rem",
-                  borderRadius: "6px",
-                  border: "1px solid #dc2626",
-                  background: "#dc2626",
-                  color: "white",
-                  cursor: "pointer",
-                  fontSize: "0.85rem"
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#b91c1c")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
-              >
-                Delete
-              </button>
+              <div style={{
+                position: "absolute",
+                top: "8px",
+                right: "8px",
+                display: "flex",
+                gap: "0.5rem"
+              }}>
+                <button
+                  type="button"
+                  title="Edit category"
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    startEditCategory(cat);
+                  }}
+                  style={{
+                    padding: "0.35rem 0.6rem",
+                    borderRadius: "6px",
+                    border: "1px solid #3b82f6",
+                    background: "#3b82f6",
+                    color: "white",
+                    cursor: "pointer",
+                    fontSize: "0.85rem"
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
+                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#3b82f6")}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  title="Delete category"
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    handleDeleteCategory(cat);
+                  }}
+                  style={{
+                    padding: "0.35rem 0.6rem",
+                    borderRadius: "6px",
+                    border: "1px solid #dc2626",
+                    background: "#dc2626",
+                    color: "white",
+                    cursor: "pointer",
+                    fontSize: "0.85rem"
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#b91c1c")}
+                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+                >
+                  Delete
+                </button>
+              </div>
             )}
           </div>
         ))}
@@ -669,6 +768,106 @@ export default function AddItem({ user }) {
               </div>
             </div>
             
+            {/* Edit Category Modal */}
+            {editingCategory && (
+              <div style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1000
+              }}
+              onClick={cancelEditCategory}
+              >
+                <div style={{
+                  background: "white",
+                  padding: "2rem",
+                  borderRadius: "12px",
+                  width: "90%",
+                  maxWidth: "500px",
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)"
+                }}
+                onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Edit Category</h3>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                      Category Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editCategoryData.name}
+                      onChange={(e) => setEditCategoryData({ ...editCategoryData, name: e.target.value })}
+                      placeholder="Enter category name"
+                      style={{
+                        width: "100%",
+                        padding: "0.75rem",
+                        borderRadius: "8px",
+                        border: "1px solid #ccc",
+                        fontSize: "1rem"
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                      Description (Optional)
+                    </label>
+                    <textarea
+                      value={editCategoryData.description}
+                      onChange={(e) => setEditCategoryData({ ...editCategoryData, description: e.target.value })}
+                      placeholder="Enter category description"
+                      rows={3}
+                      style={{
+                        width: "100%",
+                        padding: "0.75rem",
+                        borderRadius: "8px",
+                        border: "1px solid #ccc",
+                        fontSize: "1rem",
+                        resize: "vertical"
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+                    <button
+                      type="button"
+                      onClick={cancelEditCategory}
+                      style={{
+                        padding: "0.75rem 1.5rem",
+                        borderRadius: "8px",
+                        border: "1px solid #ccc",
+                        background: "white",
+                        cursor: "pointer",
+                        fontSize: "1rem"
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveEditCategory}
+                      style={{
+                        padding: "0.75rem 1.5rem",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: "#646cff",
+                        color: "white",
+                        cursor: "pointer",
+                        fontSize: "1rem",
+                        fontWeight: "500"
+                      }}
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Add Category Modal */}
             {showAddCategory && (
               <div style={{

@@ -72,6 +72,9 @@ export const updateCategory = async (req, res) => {
       return res.status(404).json({ error: 'Category not found' });
     }
 
+    const oldName = category.name;
+    const newName = name ? name.trim() : oldName;
+
     // Check if new name conflicts with existing category
     if (name && name.trim() !== category.name) {
       const existingCategory = await Category.findOne({ 
@@ -93,6 +96,16 @@ export const updateCategory = async (req, res) => {
     if (specifications) category.specifications = specifications;
 
     await category.save();
+
+    // If category name changed, update all products that reference the old category name
+    if (name && name.trim() !== oldName) {
+      await Product.updateMany(
+        { category: oldName },
+        { category: newName }
+      );
+      console.log(`Updated products from category "${oldName}" to "${newName}"`);
+    }
+
     res.json({ 
       message: 'Category updated successfully', 
       category 

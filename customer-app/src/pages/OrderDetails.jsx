@@ -187,11 +187,12 @@ export default function OrderDetails() {
           </div>
         </div>
 
-        {/* Order Items with tax details */}
-        <div style={{ marginBottom: "2rem" }}>
-          <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Items</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {order.items?.map((item, index) => (
+        {/* Order Items with tax details - Only show if there are active items */}
+        {order.items && order.items.length > 0 && (
+          <div style={{ marginBottom: "2rem" }}>
+            <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Items</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {order.items.map((item, index) => (
               <div key={index} style={{
                 padding: "1.5rem",
                 border: "1px solid #e2e8f0",
@@ -264,8 +265,9 @@ export default function OrderDetails() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Returned Items (if any) */}
         {Array.isArray(order.returnedItems) && order.returnedItems.length > 0 && (
@@ -302,55 +304,57 @@ export default function OrderDetails() {
           </div>
         )}
 
-        {/* Order Summary with tax */}
-        <div style={{ marginBottom: "2rem" }}>
-          <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Summary</h3>
-          <div style={{ 
-            padding: "1rem", 
-            background: "#f8fafc", 
-            borderRadius: "12px",
-            border: "1px solid #e2e8f0",
-            width: '100%'
-          }}>
-            {(() => {
-              const lines = (order.items || []).map(computeLine);
-              const subtotal = lines.reduce((s, l) => s + l.lineSubtotal, 0);
-              const totalTax = lines.reduce((s, l) => s + l.lineTax, 0);
-              const grandTotal = subtotal + totalTax;
-              return (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {/* Per-item tax rows */}
-                  {(order.items || []).map((it, idx) => {
-                    const { taxPct, lineSubtotal, lineTax } = computeLine(it);
-                    return (
-                      <div key={`tax-${idx}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0' }}>
-                        <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>{it.product?.name || 'Product'} (Tax {taxPct}%)</span>
-                        <span style={{ color: '#111827', fontSize: '0.9rem' }}>₹{lineSubtotal.toFixed(2)} + ₹{lineTax.toFixed(2)}</span>
-                      </div>
-                    );
-                  })}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
-                    <span style={{ color: "#374151", fontSize: "0.9rem" }}>Subtotal:</span>
-                    <span style={{ color: "#374151", fontWeight: "500", fontSize: '0.95rem' }}>₹{subtotal.toFixed(2)}</span>
+        {/* Order Summary with tax - Only show if there are active items */}
+        {order.items && order.items.length > 0 && (
+          <div style={{ marginBottom: "2rem" }}>
+            <h3 style={{ margin: "0 0 1rem 0", color: "#0f172a", fontSize: "1.2rem" }}>Order Summary</h3>
+            <div style={{ 
+              padding: "1rem", 
+              background: "#f8fafc", 
+              borderRadius: "12px",
+              border: "1px solid #e2e8f0",
+              width: '100%'
+            }}>
+              {(() => {
+                const lines = order.items.map(computeLine);
+                const subtotal = lines.reduce((s, l) => s + l.lineSubtotal, 0);
+                const totalTax = lines.reduce((s, l) => s + l.lineTax, 0);
+                const grandTotal = subtotal + totalTax;
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    {/* Per-item tax rows */}
+                    {order.items.map((it, idx) => {
+                      const { taxPct, lineSubtotal, lineTax } = computeLine(it);
+                      return (
+                        <div key={`tax-${idx}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0' }}>
+                          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>{it.product?.name || 'Product'} (Tax {taxPct}%)</span>
+                          <span style={{ color: '#111827', fontSize: '0.9rem' }}>₹{lineSubtotal.toFixed(2)} + ₹{lineTax.toFixed(2)}</span>
+                        </div>
+                      );
+                    })}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
+                      <span style={{ color: "#374151", fontSize: "0.9rem" }}>Subtotal:</span>
+                      <span style={{ color: "#374151", fontWeight: "500", fontSize: '0.95rem' }}>₹{subtotal.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
+                      <span style={{ color: "#374151", fontSize: "0.9rem" }}>Total Tax:</span>
+                      <span style={{ color: "#374151", fontWeight: "500", fontSize: '0.95rem' }}>₹{totalTax.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
+                      <span style={{ color: "#374151", fontSize: "0.9rem" }}>Shipping:</span>
+                      <span style={{ color: "#059669", fontWeight: "600", fontSize: '0.95rem' }}>Free</span>
+                    </div>
+                    <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0.4rem 0" }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#f3f4f6", borderRadius: "8px", padding: "0.75rem", marginTop: "0.25rem" }}>
+                      <span style={{ fontSize: "1rem", fontWeight: "700", color: "#111827" }}>Total:</span>
+                      <span style={{ fontSize: "1.1rem", fontWeight: "700", color: "#111827" }}>₹{grandTotal.toFixed(2)}</span>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
-                    <span style={{ color: "#374151", fontSize: "0.9rem" }}>Total Tax:</span>
-                    <span style={{ color: "#374151", fontWeight: "500", fontSize: '0.95rem' }}>₹{totalTax.toFixed(2)}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0" }}>
-                    <span style={{ color: "#374151", fontSize: "0.9rem" }}>Shipping:</span>
-                    <span style={{ color: "#059669", fontWeight: "600", fontSize: '0.95rem' }}>Free</span>
-                  </div>
-                  <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0.4rem 0" }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#f3f4f6", borderRadius: "8px", padding: "0.75rem", marginTop: "0.25rem" }}>
-                    <span style={{ fontSize: "1rem", fontWeight: "700", color: "#111827" }}>Total:</span>
-                    <span style={{ fontSize: "1.1rem", fontWeight: "700", color: "#111827" }}>₹{grandTotal.toFixed(2)}</span>
-                  </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

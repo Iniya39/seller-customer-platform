@@ -246,9 +246,7 @@ export const updateOrderItems = async (req, res) => {
       return res.status(400).json({ error: 'items must be an array' });
     }
 
-    if (items.length === 0) {
-      return res.status(400).json({ error: 'items array cannot be empty' });
-    }
+    // Allow empty array - seller can remove all products from an order
 
     // Fetch order with lean() to avoid Mongoose document circular references
     const order = await Order.findById(orderId)
@@ -334,6 +332,7 @@ export const updateOrderItems = async (req, res) => {
     };
 
     // Create a map of requested items by product ID and variant key
+    // Allow empty array - seller can remove all products
     const requestedMap = new Map();
     for (const it of items) {
       if (!it.product) {
@@ -353,9 +352,7 @@ export const updateOrderItems = async (req, res) => {
       });
     }
 
-    if (requestedMap.size === 0) {
-      return res.status(400).json({ error: 'No valid items provided' });
-    }
+    // Allow empty requestedMap - all items will be moved to returnedItems
 
     // Build updated items array from existing order items and collect removed ones
     const updatedItems = [];
@@ -413,11 +410,6 @@ export const updateOrderItems = async (req, res) => {
       }
     }
 
-    // Validate we have at least one item
-    if (updatedItems.length === 0) {
-      return res.status(400).json({ error: 'Order must have at least one item after update' });
-    }
-
     console.log('Updated items count:', updatedItems.length);
 
     // Fetch order document (not lean) to update it
@@ -426,7 +418,7 @@ export const updateOrderItems = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Update order items
+    // Update order items (allow empty array - all products can be removed)
     orderDoc.items = updatedItems;
 
     // Append removed items to returnedItems log
@@ -438,25 +430,28 @@ export const updateOrderItems = async (req, res) => {
     }
 
     // Recalculate totalAmount including tax for all items
+    // If no items remain, set totalAmount to 0
     let subtotal = 0;
     let totalTax = 0;
     
-    for (const item of updatedItems) {
-      const product = await Product.findById(item.product).select('taxPercentage').lean();
-      if (!product) {
-        console.warn('Product not found for item:', item.product);
-        continue;
+    if (updatedItems.length > 0) {
+      for (const item of updatedItems) {
+        const product = await Product.findById(item.product).select('taxPercentage').lean();
+        if (!product) {
+          console.warn('Product not found for item:', item.product);
+          continue;
+        }
+        
+        const unitPrice = (item.discountedPrice && item.discountedPrice < item.price) 
+          ? item.discountedPrice 
+          : item.price;
+        const lineSubtotal = (unitPrice || 0) * (item.quantity || 0);
+        const taxPercentage = product.taxPercentage || 0;
+        const lineTax = (lineSubtotal * taxPercentage) / 100;
+        
+        subtotal += lineSubtotal;
+        totalTax += lineTax;
       }
-      
-      const unitPrice = (item.discountedPrice && item.discountedPrice < item.price) 
-        ? item.discountedPrice 
-        : item.price;
-      const lineSubtotal = (unitPrice || 0) * (item.quantity || 0);
-      const taxPercentage = product.taxPercentage || 0;
-      const lineTax = (lineSubtotal * taxPercentage) / 100;
-      
-      subtotal += lineSubtotal;
-      totalTax += lineTax;
     }
     
     const grandTotal = subtotal + totalTax;

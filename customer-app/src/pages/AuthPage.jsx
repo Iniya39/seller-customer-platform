@@ -10,23 +10,23 @@ export default function AuthPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      background: '#ffffff',
       padding: '2rem'
     }}>
       <div style={{
         width: '100%',
         maxWidth: '420px',
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.12)',
+        backgroundColor: '#ffffff',
+        border: '1px solid #e5e7eb',
         borderRadius: '16px',
         padding: '2rem',
-        color: '#e5e7eb',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.35)'
+        color: '#000000',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
       }}>
-        <h1 style={{ margin: 0, marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: 700 }}>
-          Access Store App
+        <h1 style={{ margin: 0, marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: 700, color: '#000000' }}>
+          Access DaiLynk
         </h1>
-        <p style={{ marginTop: 0, marginBottom: '1.5rem', color: '#cbd5e1' }}>
+        <p style={{ marginTop: 0, marginBottom: '1.5rem', color: '#000000' }}>
           Enter your details to access the store
         </p>
 
@@ -86,7 +86,7 @@ export default function AuthPage() {
           style={{ display: 'grid', gap: '0.85rem' }}
         >
           <div>
-            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#cbd5e1' }}>Name</label>
+            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#000000' }}>Name</label>
             <input
               name="name"
               type="text"
@@ -97,7 +97,7 @@ export default function AuthPage() {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#cbd5e1' }}>Phone Number</label>
+            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#000000' }}>Phone Number</label>
             <input
               name="phone"
               type="tel"
@@ -109,12 +109,12 @@ export default function AuthPage() {
 
           {error && (
             <div style={{ 
-              color: '#fca5a5', 
+              color: '#dc2626', 
               fontSize: '0.95rem',
               padding: '0.75rem',
-              backgroundColor: 'rgba(252, 165, 165, 0.1)',
+              backgroundColor: '#fef2f2',
               borderRadius: '8px',
-              border: '1px solid rgba(252, 165, 165, 0.2)'
+              border: '1px solid #fecaca'
             }}>
               {error}
             </div>
@@ -128,11 +128,11 @@ export default function AuthPage() {
         <div style={{ 
           marginTop: '1.5rem', 
           padding: '1rem', 
-          backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+          backgroundColor: '#eff6ff', 
           borderRadius: '8px',
-          border: '1px solid rgba(59, 130, 246, 0.2)'
+          border: '1px solid #bfdbfe'
         }}>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: '#93c5fd' }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: '#000000' }}>
             <strong>Note:</strong> Only phone numbers registered by the store owner can access this app. 
             If you can't access, please contact the store owner to get access.
           </p>
@@ -146,9 +146,9 @@ const inputStyle = {
   width: '100%',
   padding: '0.8rem 1rem',
   borderRadius: '10px',
-  border: '1px solid rgba(255,255,255,0.18)',
-  backgroundColor: 'rgba(15,23,42,0.55)',
-  color: '#e5e7eb',
+  border: '1px solid #d1d5db',
+  backgroundColor: '#ffffff',
+  color: '#000000',
   outline: 'none',
 }
 
@@ -158,7 +158,7 @@ const primaryButtonStyle = {
   padding: '0.9rem 1rem',
   borderRadius: '10px',
   border: 'none',
-  background: 'linear-gradient(135deg,#6366f1,#22d3ee)',
+  background: '#000000',
   color: 'white',
   fontWeight: 700,
   cursor: 'pointer',

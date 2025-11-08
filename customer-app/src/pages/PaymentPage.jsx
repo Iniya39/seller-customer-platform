@@ -117,7 +117,7 @@ export default function PaymentPage() {
       customer: actualUser._id || actualUser.id,
       customerDetails: {
         name: orderData.user.name,
-        email: orderData.user.email,
+        email: orderData.user.email || '',
         phone: orderData.user.phone,
         address: orderData.user.address
       },

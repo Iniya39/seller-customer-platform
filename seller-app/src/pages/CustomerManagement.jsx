@@ -617,17 +617,27 @@ export default function CustomerManagement({ user }) {
                   borderRadius: "12px",
                   padding: "1rem",
                   marginBottom: "1rem",
-                  background: "#f9fafb"
+                  background: "#f9fafb",
+                  position: "relative"
                 }}>
-                  <div style={{ fontWeight: 700, marginBottom: "0.5rem", color: "#111827" }}>Profile</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.75rem" }}>
+                  <div style={{ fontWeight: 700, marginBottom: "0.75rem", color: "#111827", fontSize: "1.25rem" }}>Profile</div>
+                  
+                  {/* Phone in right corner */}
+                  <div style={{
+                    position: "absolute",
+                    top: "1rem",
+                    right: "1rem",
+                    textAlign: "right"
+                  }}>
+                    <div style={{ color: "#6b7280", fontSize: "0.875rem", marginBottom: "0.25rem" }}>Phone</div>
+                    <div style={{ color: "#111827", fontWeight: 600 }}>{(historyCustomer?.phone && historyCustomer.phone.trim()) ? historyCustomer.phone : '—'}</div>
+                  </div>
+
+                  {/* Name, Email, and Address on the left */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", paddingRight: "120px" }}>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
                       <span style={{ color: "#6b7280", minWidth: 64 }}>Name:</span>
                       <span style={{ color: "#111827", fontWeight: 600 }}>{(historyCustomer?.name && historyCustomer.name.trim()) ? historyCustomer.name : '—'}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <span style={{ color: "#6b7280", minWidth: 64 }}>Phone:</span>
-                      <span style={{ color: "#111827", fontWeight: 600 }}>{(historyCustomer?.phone && historyCustomer.phone.trim()) ? historyCustomer.phone : '—'}</span>
                     </div>
                     {historyCustomer?.email && (
                       <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -635,14 +645,14 @@ export default function CustomerManagement({ user }) {
                         <span style={{ color: "#111827", fontWeight: 600 }}>{historyCustomer.email}</span>
                       </div>
                     )}
-                  </div>
-                  <div style={{ marginTop: "0.75rem" }}>
-                    <div style={{ color: "#6b7280", marginBottom: "0.25rem" }}>Address</div>
-                    <div style={{ color: "#111827", fontWeight: 500 }}>{historyCustomer?.address?.street || '—'}</div>
-                    <div style={{ color: "#111827", fontWeight: 500 }}>
-                      {(historyCustomer?.address?.city || '—')}, {(historyCustomer?.address?.state || '—')} {historyCustomer?.address?.pincode ? `- ${historyCustomer.address.pincode}` : ''}
+                    <div>
+                      <div style={{ color: "#6b7280", marginBottom: "0.25rem" }}>Address</div>
+                      <div style={{ color: "#111827", fontWeight: 500 }}>{historyCustomer?.address?.street || '—'}</div>
+                      <div style={{ color: "#111827", fontWeight: 500 }}>
+                        {(historyCustomer?.address?.city || '—')}, {(historyCustomer?.address?.state || '—')} {historyCustomer?.address?.pincode ? `- ${historyCustomer.address.pincode}` : ''}
+                      </div>
+                      <div style={{ color: "#111827", fontWeight: 500 }}>{historyCustomer?.address?.country || '—'}</div>
                     </div>
-                    <div style={{ color: "#111827", fontWeight: 500 }}>{historyCustomer?.address?.country || '—'}</div>
                   </div>
                 </div>
               )}
