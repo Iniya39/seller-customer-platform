@@ -376,6 +376,12 @@ export default function AddItem({ user }) {
       return;
     }
 
+    // Validate that at least one image is uploaded
+    if (photoFiles.length === 0 && !productData.photoFile && !productData.photo) {
+      alert("Please upload at least one product image");
+      return;
+    }
+
     // Validate multi-attribute variations if hasVariations is true
     if (productData.hasVariations) {
       if (attributes.length === 0) {
@@ -1310,7 +1316,7 @@ export default function AddItem({ user }) {
                 {/* Multiple Product Photos */}
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                    Product Photos
+                    Product Photos *
                   </label>
                   
                   {/* Display uploaded photos */}

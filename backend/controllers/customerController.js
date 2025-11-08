@@ -65,7 +65,7 @@ const addCustomer = async (req, res) => {
 const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, address } = req.body;
+    const { name, phone, email, address } = req.body;
 
     // Find the customer first
     const customer = await Customer.findById(id);
@@ -76,6 +76,7 @@ const updateCustomer = async (req, res) => {
     // Update fields if provided
     if (name) customer.name = name.trim();
     if (phone) customer.phone = phone;
+    if (email !== undefined) customer.email = email ? email.trim().toLowerCase() : '';
     if (address) {
       customer.address = {
         street: address.street || customer.address.street,
@@ -194,6 +195,7 @@ const customerSignup = async (req, res) => {
         _id: permittedCustomer._id,
         name: permittedCustomer.name,
         phone: permittedCustomer.phone,
+        email: permittedCustomer.email || '',
         sellerId: permittedCustomer.sellerId,
         address: permittedCustomer.address || {
           street: '',
@@ -245,6 +247,7 @@ const customerLogin = async (req, res) => {
         _id: customer._id,
         name: customer.name,
         phone: customer.phone,
+        email: customer.email || '',
         sellerId: customer.sellerId,
         address: customer.address || {
           street: '',

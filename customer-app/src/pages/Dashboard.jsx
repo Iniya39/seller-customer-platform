@@ -100,7 +100,7 @@ export default function Dashboard() {
       </div>
 
       {/* Products List */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem' }}>
         <ProductsList searchTerm={searchTerm} />
       </div>
 

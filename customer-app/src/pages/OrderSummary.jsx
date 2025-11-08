@@ -37,6 +37,7 @@ export default function OrderSummary() {
           user: {
             name: actualUser.name || '',
             phone: actualUser.phone || '',
+            email: actualUser.email || '',
             address: actualUser.address || {
               street: '',
               city: '',
@@ -132,7 +133,7 @@ export default function OrderSummary() {
         customer: userId,
         customerDetails: {
           name: u.name,
-          email: u.email || 'customer@example.com',
+          email: u.email || '',
           phone: u.phone,
           address: addr
         },
@@ -266,6 +267,7 @@ export default function OrderSummary() {
         body: JSON.stringify({
           name: orderData.user.name,
           phone: orderData.user.phone,
+          email: orderData.user.email || '',
           address: orderData.user.address
         })
       })
@@ -471,6 +473,24 @@ export default function OrderSummary() {
                   value={orderData.user.phone || ''}
                   onChange={(e) => updateUserField('phone', e.target.value)}
                   disabled={!isEditing}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.7rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid #d1d5db',
+                    background: isEditing ? 'white' : '#f9fafb',
+                    color: isEditing ? '#0f172a' : '#6b7280'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.35rem', color: '#64748b' }}>Email</label>
+                <input
+                  type="email"
+                  value={orderData.user.email || ''}
+                  onChange={(e) => updateUserField('email', e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="customer@example.com"
                   style={{ 
                     width: '100%', 
                     padding: '0.7rem', 

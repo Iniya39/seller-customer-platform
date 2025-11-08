@@ -303,6 +303,7 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
         user: {
           name: actualUser?.name || '',
           phone: actualUser?.phone || '',
+          email: actualUser?.email || '',
           address: actualUser?.address || {
             street: '',
             city: '',
@@ -377,6 +378,7 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
             user: {
               name: actualUser?.name || '',
               phone: actualUser?.phone || '',
+              email: actualUser?.email || '',
               address: actualUser?.address || {
                 street: '',
                 city: '',
@@ -439,21 +441,26 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
           const hasMoreProducts = categoryProducts.length > 4
 
           return (
-            <div key={categoryName} style={{ marginBottom: '3rem' }}>
+            <div key={categoryName} style={{ marginBottom: '4rem' }}>
               <h2 style={{ 
-                marginBottom: '1rem', 
+                marginBottom: '1.5rem', 
                 color: '#0f172a', 
                 fontSize: '1.5rem',
                 borderBottom: '2px solid #e2e8f0',
-                paddingBottom: '0.5rem'
+                paddingBottom: '0.75rem'
               }}>
                 {categoryName}
               </h2>
               
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-                gap: '1.5rem' 
+                gridTemplateColumns: 'repeat(4, 1fr)', 
+                gap: '1.5rem',
+                marginBottom: '2.5rem',
+                gridAutoRows: '1fr',
+                alignItems: 'stretch',
+                width: '100%',
+                boxSizing: 'border-box'
               }}>
                 {productsToShow.map(product => (
                   <ProductCard 
@@ -475,7 +482,8 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'center', 
-                  marginTop: '1.5rem' 
+                  marginTop: '0',
+                  paddingTop: '0'
                 }}>
                   <button
                     onClick={() => {
@@ -485,8 +493,8 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
                       }))
                     }}
                     style={{
-                      padding: '0.75rem 2rem',
-                      borderRadius: '8px',
+                      padding: '0.875rem 2.5rem',
+                      borderRadius: '10px',
                       border: '2px solid #3b82f6',
                       background: 'white',
                       color: '#3b82f6',
@@ -496,15 +504,20 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
                       transition: 'all 0.2s',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      boxShadow: '0 2px 4px rgba(59, 130, 246, 0.1)'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.background = '#3b82f6'
                       e.target.style.color = 'white'
+                      e.target.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.2)'
+                      e.target.style.transform = 'translateY(-2px)'
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.background = 'white'
                       e.target.style.color = '#3b82f6'
+                      e.target.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.1)'
+                      e.target.style.transform = 'translateY(0)'
                     }}
                   >
                     {isExpanded ? (
@@ -598,7 +611,13 @@ function ProductCard({ product, onClick, getProductDiscountPct }) {
       border: '1px solid #e2e8f0',
       transition: 'transform 0.2s, box-shadow 0.2s',
       cursor: 'pointer',
-      position: 'relative'
+      position: 'relative',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      width: '100%',
+      boxSizing: 'border-box'
     }}
     onClick={onClick}
     onMouseEnter={(e) => {
@@ -630,8 +649,8 @@ function ProductCard({ product, onClick, getProductDiscountPct }) {
           {productPct}%
         </div>
       )}
-      {product.photo && (
-        <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+      {product.photo ? (
+        <div style={{ marginBottom: '1rem', textAlign: 'center', flexShrink: 0 }}>
           <img 
             src={product.photo} 
             alt={product.name}
@@ -643,13 +662,18 @@ function ProductCard({ product, onClick, getProductDiscountPct }) {
             }}
           />
         </div>
+      ) : (
+        <div style={{ marginBottom: '1rem', textAlign: 'center', flexShrink: 0, height: '200px', background: '#f3f4f6', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>No Image</span>
+        </div>
       )}
       
       <h3 style={{ 
         margin: '0 0 0.5rem 0', 
         fontSize: '1.1rem', 
         fontWeight: '600',
-        color: '#0f172a'
+        color: '#0f172a',
+        flexShrink: 0
       }}>
         {product.name}
         {product.unit && (
@@ -668,7 +692,8 @@ function ProductCard({ product, onClick, getProductDiscountPct }) {
           background: '#eff6ff',
           padding: '0.25rem 0.5rem',
           borderRadius: '4px',
-          display: 'inline-block'
+          display: 'inline-block',
+          flexShrink: 0
         }}>
           {product.attributes.length === 1 
             ? `Available in different ${product.attributes[0].name}s`
@@ -677,7 +702,7 @@ function ProductCard({ product, onClick, getProductDiscountPct }) {
         </div>
       )}
       
-      <div style={{ marginBottom: '1rem' }}>
+      <div style={{ marginBottom: '1rem', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         {displayPrice === null ? (
           <div style={{ 
             fontSize: '1.1rem', 

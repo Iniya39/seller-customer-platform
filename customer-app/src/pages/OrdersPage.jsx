@@ -81,6 +81,24 @@ export default function OrdersPage() {
     return statusMap[status] || status
   }
 
+  // Helper function to check if order has returned items
+  const hasReturnedItems = (order) => {
+    return Array.isArray(order.returnedItems) && order.returnedItems.length > 0
+  }
+
+  // Helper function to check if all items are returned
+  const allItemsReturned = (order) => {
+    if (!hasReturnedItems(order)) return false
+    // If there are no active items and there are returned items, all items are returned
+    const activeCount = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0
+    return activeCount === 0
+  }
+
+  // Helper function to check if order is delivered
+  const isDelivered = (order) => {
+    return order.deliveryStatus === 'delivered' || order.status === 'delivered'
+  }
+
   if (loading) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', minHeight: '100vh', background: '#f8fafc' }}>
@@ -179,6 +197,38 @@ export default function OrdersPage() {
             >
               Cancelled
             </button>
+            <button
+              onClick={() => setActiveFilter('delivered')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                background: activeFilter === 'delivered' ? '#059669' : 'white',
+                color: activeFilter === 'delivered' ? 'white' : '#64748b',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: activeFilter === 'delivered' ? 'none' : '1px solid #d1d5db',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Delivered
+            </button>
+            <button
+              onClick={() => setActiveFilter('returned')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                background: activeFilter === 'returned' ? '#dc2626' : 'white',
+                color: activeFilter === 'returned' ? 'white' : '#64748b',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: activeFilter === 'returned' ? 'none' : '1px solid #d1d5db',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Returned
+            </button>
           </div>
         </div>
 
@@ -186,6 +236,8 @@ export default function OrdersPage() {
         {(() => {
           const filteredOrders = orders.filter(order => {
             if (activeFilter === 'all') return true
+            if (activeFilter === 'delivered') return isDelivered(order)
+            if (activeFilter === 'returned') return hasReturnedItems(order)
             return order.status === activeFilter
           })
           
@@ -232,9 +284,11 @@ export default function OrdersPage() {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
               }}>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
-                <h2 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>No {getStatusText(activeFilter)} Orders</h2>
+                <h2 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>
+                  No {activeFilter === 'delivered' ? 'Delivered' : activeFilter === 'returned' ? 'Returned' : getStatusText(activeFilter)} Orders
+                </h2>
                 <p style={{ color: '#64748b' }}>
-                  You don't have any {getStatusText(activeFilter).toLowerCase()} orders.
+                  You don't have any {activeFilter === 'delivered' ? 'delivered' : activeFilter === 'returned' ? 'returned' : getStatusText(activeFilter).toLowerCase()} orders.
                 </p>
               </div>
             )
@@ -347,16 +401,48 @@ export default function OrdersPage() {
                       Placed on {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
                     </p>
                   </div>
-                  <span style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    color: 'white',
-                    background: getStatusColor(order.status)
-                  }}>
-                    {getStatusText(order.status)}
-                  </span>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Show Delivered badge only if not all items are returned */}
+                    {isDelivered(order) && !allItemsReturned(order) && (
+                      <span style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        color: 'white',
+                        background: '#059669'
+                      }}>
+                        Delivered
+                      </span>
+                    )}
+                    {/* Show Returned badge next to Delivered if order has returned items and is delivered */}
+                    {/* Or show Returned alone if all items are returned */}
+                    {isDelivered(order) && hasReturnedItems(order) && (
+                      <span style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        color: 'white',
+                        background: '#dc2626'
+                      }}>
+                        Returned
+                      </span>
+                    )}
+                    {/* Show status badge if order is not delivered */}
+                    {!isDelivered(order) && (
+                      <span style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        color: 'white',
+                        background: getStatusColor(order.status)
+                      }}>
+                        {getStatusText(order.status)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>

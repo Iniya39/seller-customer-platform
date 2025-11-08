@@ -7,6 +7,7 @@ export default function ProfileModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    email: '',
     address: {
       street: '',
       city: '',
@@ -42,6 +43,7 @@ export default function ProfileModal({ isOpen, onClose }) {
         setFormData({
           name: actualUser.name || '',
           phone: actualUser.phone || '',
+          email: actualUser.email || '',
           address: {
             street: actualUser.address?.street || '',
             city: actualUser.address?.city || '',
@@ -316,6 +318,35 @@ export default function ProfileModal({ isOpen, onClose }) {
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     required
                     placeholder="+91 9876543210"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #d1d5db',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  />
+                </div>
+
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: '#374151'
+                  }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="customer@example.com"
                     style={{
                       width: '100%',
                       padding: '0.75rem',

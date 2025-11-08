@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import SplashScreen from './components/SplashScreen.jsx'
 import AuthPage from './pages/AuthPage.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import ProductsPage from './pages/ProductsPage.jsx'
@@ -12,6 +13,7 @@ import OrderDetails from './pages/OrderDetails.jsx'
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<SplashScreen />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/products" element={<ProductsPage />} />
@@ -21,7 +23,7 @@ export default function App() {
       <Route path="/order-success" element={<OrderSuccess />} />
       <Route path="/orders" element={<OrdersPage />} />
       <Route path="/order/:id" element={<OrderDetails />} />
-      <Route path="*" element={<Navigate to="/auth" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

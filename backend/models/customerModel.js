@@ -12,6 +12,11 @@ const customerSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true
+  },
   sellerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

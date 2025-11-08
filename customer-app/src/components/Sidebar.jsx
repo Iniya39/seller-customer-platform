@@ -90,7 +90,8 @@ export default function Sidebar({ isOpen, onClose }) {
           transition: 'left 0.3s ease',
           display: 'flex',
           flexDirection: 'column',
-          padding: '1.5rem'
+          padding: '1.5rem',
+          paddingBottom: '2rem'
         }}
       >
         {/* Close Button */}
@@ -124,7 +125,7 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* Navigation Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
           <button
             onClick={handleOrdersClick}
             style={{
@@ -238,6 +239,30 @@ export default function Sidebar({ isOpen, onClose }) {
               </span>
             )}
           </button>
+        </div>
+
+        {/* Seller Information */}
+        <div style={{
+          marginTop: 'auto',
+          paddingTop: '0',
+          paddingBottom: '1.5rem',
+          borderTop: '1px solid #e5e7eb'
+        }}>
+          <div style={{
+            color: '#0f172a',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            marginBottom: '0.25rem'
+          }}>
+            Darshith D
+          </div>
+          <div style={{
+            color: '#0f172a',
+            fontSize: '0.875rem',
+            fontWeight: 'bold'
+          }}>
+            9943952223
+          </div>
         </div>
       </div>
     </>

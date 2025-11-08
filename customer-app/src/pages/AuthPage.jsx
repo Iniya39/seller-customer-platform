@@ -75,6 +75,7 @@ export default function AuthPage() {
               
               localStorage.setItem('user', JSON.stringify(data))
               localStorage.setItem('lastLogin', new Date().toISOString())
+              localStorage.setItem('lastLoginTime', new Date().toISOString())
               window.location.href = '/dashboard'
             } catch (err) {
               setError(err.message)

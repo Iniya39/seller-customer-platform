@@ -47,6 +47,7 @@ export default function CartPage() {
       user: {
         name: actualUser?.name || '',
         phone: actualUser?.phone || '',
+        email: actualUser?.email || '',
         address: actualUser?.address || {
           street: '',
           city: '',
