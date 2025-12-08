@@ -105,14 +105,55 @@ export default function Dashboard({ user }) {
       alert('Please enter a product ID');
       return;
     }
+    
+    const productIdToAdd = newProductId.trim();
+    console.log('[Seller App] Adding highlighted product ID:', productIdToAdd);
+    console.log('[Seller App] Seller ID:', user._id);
+    console.log('[Seller App] Seller ID type:', typeof user._id);
+    
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/highlighted-products/seller/${user._id}/add`, {
-        productId: newProductId.trim()
+      // First verify the product exists and belongs to this seller (exact match, case-sensitive)
+      const productsResponse = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/products/seller/${user._id}`);
+      const sellerProducts = productsResponse.data || [];
+      const productExists = sellerProducts.find(p => 
+        p.productId && p.productId.trim() === productIdToAdd // Exact match, case-sensitive
+      );
+      
+      if (!productExists) {
+        alert(`Error: Product with ID "${productIdToAdd}" not found in your products. Please check the product ID matches exactly (case-sensitive) and make sure it exists.`);
+        console.error('[Seller App] Product not found in seller products:', {
+          searchedId: productIdToAdd,
+          availableIds: sellerProducts.map(p => p.productId),
+          note: 'Matching is now case-sensitive. Make sure the product ID matches exactly.'
+        });
+        return;
+      }
+      
+      console.log('[Seller App] Product found:', productExists.name, 'with productId:', productExists.productId);
+      
+      const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/highlighted-products/seller/${user._id}/add`, {
+        productId: productIdToAdd
       });
-      setHighlightedProductIds([...highlightedProductIds, newProductId.trim()]);
+      
+      console.log('[Seller App] Add response:', response.data);
+      
+      // Refetch from backend to get the normalized product IDs
+      const fetchResponse = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/highlighted-products/seller/${user._id}`);
+      const fetchedIds = fetchResponse.data.highlighted?.productIds || [];
+      console.log('[Seller App] Fetched highlighted product IDs after add:', fetchedIds);
+      setHighlightedProductIds(fetchedIds);
       setNewProductId('');
+      
+      if (fetchedIds.length > 0) {
+        alert(`Product ID "${productIdToAdd}" added successfully! Total highlighted products: ${fetchedIds.length}`);
+      } else {
+        alert('Warning: Product ID was added but not found when fetching. Please check backend logs.');
+      }
     } catch (error) {
-      alert('Error adding product ID: ' + (error.response?.data?.error || error.message));
+      const errorMessage = error.response?.data?.error || error.message;
+      alert('Error adding product ID: ' + errorMessage);
+      console.error('[Seller App] Error adding highlighted product:', error);
+      console.error('[Seller App] Error response:', error.response?.data);
     }
   };
 
@@ -122,9 +163,12 @@ export default function Dashboard({ user }) {
       await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/highlighted-products/seller/${user._id}/remove`, {
         productId: productId
       });
-      setHighlightedProductIds(highlightedProductIds.filter(id => id !== productId));
+      // Refetch from backend to get updated list
+      const fetchResponse = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/highlighted-products/seller/${user._id}`);
+      setHighlightedProductIds(fetchResponse.data.highlighted?.productIds || []);
     } catch (error) {
       alert('Error removing product ID: ' + (error.response?.data?.error || error.message));
+      console.error('Error removing highlighted product:', error);
     }
   };
 

@@ -4,6 +4,8 @@ import {
   createProduct,
   getAllProducts,
   getProductById,
+  getProductByProductId,
+  getProductsByProductIds,
   updateProduct,
   deleteProduct,
   getProductsBySeller,
@@ -44,7 +46,9 @@ router.post('/', upload.fields([
 ]), createProduct);                    // Create new product
 router.get('/', getAllProducts);                    // Get all products with filters
 router.get('/seller/:sellerId', getProductsBySeller); // Get products by specific seller
-router.get('/:id', getProductById);                 // Get single product by ID
+router.get('/by-product-id/:productId', getProductByProductId); // Get product by productId field
+router.post('/by-product-ids', getProductsByProductIds); // Get multiple products by productIds
+router.get('/:id', getProductById);                 // Get single product by MongoDB _id
 router.put('/:id', upload.fields([
   { name: 'photo', maxCount: 1 },
   { name: 'photos', maxCount: 10 }

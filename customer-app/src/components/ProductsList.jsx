@@ -134,7 +134,6 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
       // Force console output
       console.log('%c[Highlighted] ===== STARTING FETCH =====', 'color: red; font-size: 16px; font-weight: bold;')
       console.log('[Highlighted] ===== STARTING FETCH =====')
-      alert('Fetching highlighted products... Check console for details.')
       
       const productsToUse = productsList || products
       console.log('[Highlighted] Products to use:', productsToUse.length)
@@ -145,66 +144,80 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
         return
       }
       
-      // Get seller ID from first product - handle both populated and non-populated seller
-      let sellerId = null
-      const firstProduct = productsToUse[0]
-      console.log('[Highlighted] First product structure:', {
-        hasSeller: !!firstProduct.seller,
-        sellerType: typeof firstProduct.seller,
-        seller: firstProduct.seller
+      // Get all unique seller IDs from products (in case there are multiple sellers)
+      const extractSellerId = (product) => {
+        if (!product.seller) return null
+        if (typeof product.seller === 'object' && product.seller._id) {
+          return product.seller._id.toString()
+        } else if (typeof product.seller === 'string') {
+          return product.seller
+        } else if (product.seller && product.seller.toString) {
+          return product.seller.toString()
+        }
+        return null
+      }
+      
+      // Get unique seller IDs from all products
+      const sellerIds = new Set()
+      productsToUse.forEach(product => {
+        const sid = extractSellerId(product)
+        if (sid) sellerIds.add(sid)
       })
       
-      if (firstProduct.seller) {
-        if (typeof firstProduct.seller === 'object' && firstProduct.seller._id) {
-          sellerId = firstProduct.seller._id.toString()
-        } else if (typeof firstProduct.seller === 'string') {
-          sellerId = firstProduct.seller
-        } else if (firstProduct.seller && firstProduct.seller.toString) {
-          sellerId = firstProduct.seller.toString()
+      const uniqueSellerIds = Array.from(sellerIds)
+      console.log('[Highlighted] Found unique seller IDs:', uniqueSellerIds)
+      console.log('[Highlighted] Total unique sellers:', uniqueSellerIds.length)
+      
+      if (uniqueSellerIds.length === 0) {
+        console.error('[Highlighted] ERROR: No seller IDs found in any products')
+        setHighlightedProducts([])
+        return
+      }
+      
+      // Fetch highlighted products for all sellers and combine them
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+      let allProductIds = []
+      let primarySellerId = uniqueSellerIds[0] // Use first seller as primary for product fetching
+      
+      console.log('[Highlighted] Fetching highlighted products for all sellers...')
+      
+      // Fetch highlighted products for each seller
+      for (const currentSellerId of uniqueSellerIds) {
+        const apiUrl = `${baseUrl}/highlighted-products/seller/${currentSellerId}`
+        console.log(`[Highlighted] Fetching from: ${apiUrl}`)
+        
+        try {
+          const highlightedResponse = await fetch(apiUrl)
+          console.log(`[Highlighted] Response status for seller ${currentSellerId}:`, highlightedResponse.status, highlightedResponse.statusText)
+          
+          if (highlightedResponse.ok) {
+            const highlightedData = await highlightedResponse.json()
+            const sellerProductIds = highlightedData.highlighted?.productIds || []
+            
+            console.log(`[Highlighted] Seller ${currentSellerId} has ${sellerProductIds.length} highlighted products:`, sellerProductIds)
+            
+            if (sellerProductIds.length > 0) {
+              allProductIds.push(...sellerProductIds)
+              // Use the first seller that has highlighted products as primary
+              if (allProductIds.length === sellerProductIds.length) {
+                primarySellerId = currentSellerId
+              }
+            }
+          } else {
+            const errorText = await highlightedResponse.text()
+            console.warn(`[Highlighted] Failed to fetch for seller ${currentSellerId}:`, highlightedResponse.status, errorText)
+          }
+        } catch (fetchError) {
+          console.warn(`[Highlighted] Error fetching for seller ${currentSellerId}:`, fetchError)
         }
       }
       
-      console.log('[Highlighted] Extracted Seller ID:', sellerId)
+      console.log('[Highlighted] Total highlighted product IDs from all sellers:', allProductIds.length)
+      console.log('[Highlighted] All product IDs:', allProductIds)
+      console.log('[Highlighted] Primary seller ID for product fetching:', primarySellerId)
       
-      if (!sellerId) {
-        console.error('[Highlighted] ERROR: No seller ID found. First product:', JSON.stringify(firstProduct, null, 2))
-        setHighlightedProducts([])
-        return
-      }
-      
-      // Fetch highlighted product IDs
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-      const apiUrl = `${baseUrl}/highlighted-products/seller/${sellerId}`
-      console.log('%c[Highlighted] Fetching from:', 'color: blue; font-weight: bold;', apiUrl)
-      console.log('[Highlighted] Full API URL:', apiUrl)
-      console.log('[Highlighted] Seller ID being used:', sellerId)
-      
-      let highlightedResponse
-      try {
-        highlightedResponse = await fetch(apiUrl)
-        console.log('[Highlighted] Response status:', highlightedResponse.status, highlightedResponse.statusText)
-      } catch (fetchError) {
-        console.error('[Highlighted] FETCH ERROR:', fetchError)
-        alert(`Error fetching highlighted products: ${fetchError.message}`)
-        setHighlightedProducts([])
-        return
-      }
-      
-      if (!highlightedResponse.ok) {
-        const errorText = await highlightedResponse.text()
-        console.error('[Highlighted] HTTP ERROR:', highlightedResponse.status, highlightedResponse.statusText, errorText)
-        alert(`Failed to fetch highlighted products: ${highlightedResponse.status} ${highlightedResponse.statusText}`)
-        setHighlightedProducts([])
-        return
-      }
-      
-      const highlightedData = await highlightedResponse.json()
-      console.log('%c[Highlighted] Response data:', 'color: green; font-weight: bold;', JSON.stringify(highlightedData, null, 2))
-      console.log('[Highlighted] Response data:', highlightedData)
-      const productIds = highlightedData.highlighted?.productIds || []
-      
-      console.log('[Highlighted] Product IDs from backend:', productIds)
-      console.log('[Highlighted] Product IDs count:', productIds.length)
+      const productIds = allProductIds
+      const sellerId = primarySellerId // Use primary seller for fetching product details
       
       // Log sample products for comparison
       const sampleProducts = productsToUse.slice(0, 5).map(p => ({ 
@@ -221,59 +234,107 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
         return
       }
       
-      // Fetch products by IDs - check both productId field and _id
-      // Product IDs are stored as uppercase in the database, so we need to match case-insensitively
-      const highlightedProductsList = productsToUse.filter(p => {
-        const pProductId = p.productId ? p.productId.toUpperCase().trim() : null
-        const pId = p._id ? String(p._id).trim() : null
+      // Try to fetch products by productIds from backend API first
+      let highlightedProductsList = []
+      try {
+        console.log('[Highlighted] Attempting to fetch products from backend API...')
+        console.log('[Highlighted] Sending productIds:', productIds)
+        console.log('[Highlighted] Sending sellerId:', sellerId, '(may be null if multiple sellers)')
         
-        // Try to match with productId (case-insensitive)
-        const matchesProductId = pProductId && productIds.some(id => {
-          const normalizedId = String(id).toUpperCase().trim()
-          return normalizedId === pProductId
+        // If we have multiple sellers, don't filter by seller (fetch all matching products)
+        // Otherwise, filter by the primary seller
+        const requestBody = uniqueSellerIds.length > 1 
+          ? { productIds } // No seller filter - get products from any seller
+          : { productIds, sellerId } // Filter by seller
+        
+        console.log('[Highlighted] Request body:', requestBody)
+        
+        const productsResponse = await fetch(`${baseUrl}/products/by-product-ids`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
         })
         
-        // Try to match with _id
-        const matchesId = pId && productIds.some(id => String(id).trim() === pId)
+        console.log('[Highlighted] API response status:', productsResponse.status, productsResponse.statusText)
         
-        if (matchesProductId || matchesId) {
-          console.log('[Highlighted] ✓ MATCHED product:', {
-            name: p.name,
-            productId: p.productId,
-            productIdUpper: pProductId,
-            matchedProductId: matchesProductId,
-            matchedId: matchesId,
-            matchingIds: productIds.filter(id => {
-              const normalizedId = String(id).toUpperCase().trim()
-              return normalizedId === pProductId || String(id).trim() === pId
-            })
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json()
+          highlightedProductsList = productsData.products || []
+          console.log('[Highlighted] ✓ Successfully fetched products from backend API:', highlightedProductsList.length)
+          console.log('[Highlighted] Fetched products:', highlightedProductsList.map(p => ({ name: p.name, productId: p.productId })))
+          
+          if (highlightedProductsList.length === 0) {
+            console.warn('[Highlighted] API returned empty array. This might mean:')
+            console.warn('[Highlighted] 1. Product IDs in highlighted products don\'t match any products')
+            console.warn('[Highlighted] 2. Products belong to a different seller')
+            console.warn('[Highlighted] 3. Products are inactive')
+            console.warn('[Highlighted] Falling back to client-side matching...')
+            throw new Error('API returned empty array')
+          }
+        } else {
+          const errorText = await productsResponse.text()
+          console.error('[Highlighted] Backend API failed:', productsResponse.status, errorText)
+          console.warn('[Highlighted] Backend API failed, falling back to client-side matching')
+          throw new Error('Backend API failed')
+        }
+      } catch (apiError) {
+        console.log('[Highlighted] Using client-side matching as fallback...')
+        // Fallback to client-side matching if backend endpoint fails
+        // Match productId exactly (case-sensitive) as stored in database
+        highlightedProductsList = productsToUse.filter(p => {
+          const pProductId = p.productId ? p.productId.trim() : null
+          const pId = p._id ? String(p._id).trim() : null
+          
+          // Try to match with productId (exact match, case-sensitive)
+          const matchesProductId = pProductId && productIds.some(id => {
+            const trimmedId = String(id).trim()
+            return trimmedId === pProductId
           })
+          
+          // Try to match with _id (for backward compatibility)
+          const matchesId = pId && productIds.some(id => String(id).trim() === pId)
+          
+          if (matchesProductId || matchesId) {
+            console.log('[Highlighted] ✓ MATCHED product:', {
+              name: p.name,
+              productId: p.productId,
+              matchedProductId: matchesProductId,
+              matchedId: matchesId,
+              matchingIds: productIds.filter(id => {
+                const trimmedId = String(id).trim()
+                return trimmedId === pProductId || trimmedId === pId
+              })
+            })
+          }
+          
+          return matchesProductId || matchesId
+        })
+        
+        console.log('[Highlighted] ===== MATCHING RESULTS =====')
+        console.log('[Highlighted] Total products checked:', productsToUse.length)
+        console.log('[Highlighted] Highlighted product IDs from backend:', productIds)
+        console.log('[Highlighted] Found matching products:', highlightedProductsList.length)
+        console.log('[Highlighted] Matched products:', highlightedProductsList.map(p => ({ name: p.name, productId: p.productId })))
+        
+        if (highlightedProductsList.length === 0) {
+          console.error('[Highlighted] ERROR: No products matched!')
+          console.error('[Highlighted] Backend product IDs:', productIds)
+          console.error('[Highlighted] Available product IDs in products:', productsToUse.map(p => p.productId))
+          console.error('[Highlighted] This means the product IDs in highlighted products do not match any existing products.')
+          console.error('[Highlighted] Note: Product ID matching is now case-sensitive. Make sure the IDs match exactly.')
         }
         
-        return matchesProductId || matchesId
-      })
-      
-      console.log('[Highlighted] ===== MATCHING RESULTS =====')
-      console.log('[Highlighted] Total products checked:', productsToUse.length)
-      console.log('[Highlighted] Highlighted product IDs from backend:', productIds)
-      console.log('[Highlighted] Found matching products:', highlightedProductsList.length)
-      console.log('[Highlighted] Matched products:', highlightedProductsList.map(p => ({ name: p.name, productId: p.productId })))
-      
-      if (highlightedProductsList.length === 0) {
-        console.error('[Highlighted] ERROR: No products matched!')
-        console.error('[Highlighted] Backend product IDs:', productIds)
-        console.error('[Highlighted] Available product IDs in products:', productsToUse.map(p => p.productId))
-        console.error('[Highlighted] This means the product IDs in highlighted products do not match any existing products.')
+        // Sort by the order in productIds array (exact match, case-sensitive)
+        highlightedProductsList.sort((a, b) => {
+          const aId = (a.productId || a._id)?.toString().trim()
+          const bId = (b.productId || b._id)?.toString().trim()
+          const indexA = productIds.findIndex(id => String(id).trim() === aId)
+          const indexB = productIds.findIndex(id => String(id).trim() === bId)
+          return indexA - indexB
+        })
       }
-      
-      // Sort by the order in productIds array
-      highlightedProductsList.sort((a, b) => {
-        const aId = (a.productId || a._id)?.toString().toUpperCase().trim()
-        const bId = (b.productId || b._id)?.toString().toUpperCase().trim()
-        const indexA = productIds.findIndex(id => String(id).toUpperCase().trim() === aId)
-        const indexB = productIds.findIndex(id => String(id).toUpperCase().trim() === bId)
-        return indexA - indexB
-      })
       
       console.log('[Highlighted] Setting highlighted products:', highlightedProductsList.map(p => p.name))
       setHighlightedProducts(highlightedProductsList)
@@ -664,143 +725,106 @@ export default function ProductsList({ searchTerm: externalSearchTerm = '' }) {
 
   return (
     <>
-      {/* Debug Section - Remove after testing */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ 
-          padding: '1rem', 
-          background: '#fef3c7', 
-          border: '1px solid #f59e0b', 
-          borderRadius: '8px', 
-          marginBottom: '1rem',
-          fontSize: '0.875rem'
-        }}>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>Debug Info:</strong> Highlighted Products: {highlightedProducts.length}, 
-            Search Term: "{externalSearchTerm}", 
-            Will Render: {highlightedProducts.length > 0 && !externalSearchTerm ? 'YES' : 'NO'}
-          </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            Products loaded: {products.length}, 
-            First product seller: {products[0]?.seller ? (typeof products[0].seller === 'object' ? products[0].seller._id : products[0].seller) : 'N/A'}
-          </div>
-          <button 
-            onClick={async () => {
-              console.log('[Highlighted] ===== MANUAL TRIGGER CLICKED =====')
-              console.log('[Highlighted] Products array:', products)
-              console.log('[Highlighted] Products length:', products.length)
-              if (products.length > 0) {
-                console.log('[Highlighted] Calling fetchHighlightedProducts with products')
-                await fetchHighlightedProducts(products)
-                console.log('[Highlighted] ===== MANUAL TRIGGER COMPLETE =====')
-              } else {
-                alert('No products loaded yet. Please wait for products to load.')
-              }
-            }}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '0.875rem'
-            }}
-          >
-            🔄 Manually Fetch Highlighted Products
-          </button>
-        </div>
-      )}
-
       {/* Highlighted Products Section - Show when we have highlighted products */}
       {highlightedProducts.length > 0 && (
         <div style={{ marginBottom: '3rem' }}>
+          <h2 style={{ 
+            marginBottom: '1.5rem', 
+            color: '#0f172a', 
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            borderBottom: '2px solid #e2e8f0',
+            paddingBottom: '0.75rem'
+          }}>
+            Highlighted Products
+          </h2>
           <div
             style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '100%',
-              height: '300px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              display: 'grid',
+              gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
+              gap: '1rem',
+              width: '100%'
             }}
-            onClick={() => {
-              const product = highlightedProducts[currentHighlightedIndex]
-              if (product) {
-                setSelectedProduct(product)
-                setQuantity(1)
-                setCurrentImageIndex(0)
-                setSelectedVariant(null)
-                setSelectedAttributes({})
-              }
-            }}
-            onTouchStart={handleHighlightedTouchStart}
-            onTouchMove={handleHighlightedTouchMove}
-            onTouchEnd={handleHighlightedTouchEnd}
           >
-            <img
-              src={
-                highlightedProducts[currentHighlightedIndex]?.photos?.[0] ||
-                highlightedProducts[currentHighlightedIndex]?.photo ||
-                'https://via.placeholder.com/400x300?text=No+Image'
-              }
-              alt={highlightedProducts[currentHighlightedIndex]?.name || 'Highlighted Product'}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
-              onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/400x300?text=No+Image'
-              }}
-            />
-            {highlightedProducts.length > 1 && (
-              <>
-                {/* Dots indicator */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '1rem',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  display: 'flex',
-                  gap: '0.5rem',
-                  zIndex: 10
-                }}>
-                  {highlightedProducts.map((_, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        width: currentHighlightedIndex === index ? '24px' : '8px',
-                        height: '8px',
-                        borderRadius: '4px',
-                        background: currentHighlightedIndex === index ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setCurrentHighlightedIndex(index)
-                      }}
-                    />
-                  ))}
+            {highlightedProducts.map((product, index) => (
+              <div
+                key={product._id || index}
+                onClick={() => {
+                  setSelectedProduct(product)
+                  setQuantity(1)
+                  setCurrentImageIndex(0)
+                  setSelectedVariant(null)
+                  setSelectedAttributes({})
+                }}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  aspectRatio: '4/3',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  background: '#f3f4f6'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)'
+                  e.currentTarget.style.boxShadow = '0 8px 12px rgba(0, 0, 0, 0.15)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <img
+                  src={
+                    product.photos?.[0] ||
+                    product.photo ||
+                    'https://via.placeholder.com/400x300?text=No+Image'
+                  }
+                  alt={product.name || 'Highlighted Product'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/400x300?text=No+Image'
+                  }}
+                />
+                {/* Product name overlay on hover */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+                    color: 'white',
+                    padding: '1rem',
+                    opacity: 0,
+                    transition: 'opacity 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '1'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '0'
+                  }}
+                >
+                  <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>
+                    {product.name}
+                  </div>
+                  {product.price && (
+                    <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                      ₹{product.discountedPrice && product.discountedPrice < product.price 
+                        ? product.discountedPrice 
+                        : product.price}
+                    </div>
+                  )}
                 </div>
-                {/* Swipe hint */}
-                <div style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: 'rgba(0, 0, 0, 0.5)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  zIndex: 10
-                }}>
-                  {currentHighlightedIndex + 1} / {highlightedProducts.length}
-                </div>
-              </>
-            )}
+              </div>
+            ))}
           </div>
         </div>
       )}

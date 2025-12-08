@@ -44,8 +44,9 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Check if productId already exists
-    const existingProduct = await Product.findOne({ productId: productId.toUpperCase() });
+    // Check if productId already exists (case-sensitive exact match)
+    const trimmedProductId = productId.trim();
+    const existingProduct = await Product.findOne({ productId: trimmedProductId });
     if (existingProduct) {
       return res.status(400).json({ 
         error: 'Product ID already exists. Please use a different Product ID.' 
@@ -132,7 +133,7 @@ export const createProduct = async (req, res) => {
 
     // Create product data object
     const productData = {
-      productId: productId.toUpperCase(),
+      productId: trimmedProductId, // Save exactly as entered (trimmed)
       name,
       brand: brand || '',
       unit: unit || 'piece',
@@ -497,6 +498,91 @@ export const getProductsBySeller = async (req, res) => {
     console.error('Error fetching seller products:', error);
     res.status(500).json({ 
       error: 'Failed to fetch seller products',
+      details: error.message 
+    });
+  }
+};
+
+// Get product by productId field (not MongoDB _id)
+export const getProductByProductId = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
+    
+    const product = await Product.findOne({ productId: productId.trim() }) // Exact match, case-sensitive
+      .populate('seller', 'name email');
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error('Error fetching product by productId:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch product',
+      details: error.message 
+    });
+  }
+};
+
+// Get multiple products by productIds array
+export const getProductsByProductIds = async (req, res) => {
+  try {
+    const { productIds, sellerId } = req.body;
+    
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ error: 'productIds array is required' });
+    }
+    
+    console.log(`[Products] Fetching products by productIds. Count: ${productIds.length}, sellerId: ${sellerId || 'not provided'}`);
+    console.log(`[Products] Product IDs:`, productIds);
+    
+    // Use product IDs exactly as provided (case-sensitive matching)
+    const trimmedIds = productIds.map(id => String(id).trim());
+    console.log(`[Products] Product IDs to search (exact match):`, trimmedIds);
+    
+    // Build query filter - exact match, case-sensitive
+    const filter = { 
+      productId: { $in: trimmedIds },
+      isActive: true 
+    };
+    
+    // If sellerId is provided, filter by seller
+    if (sellerId) {
+      const mongoose = (await import('mongoose')).default;
+      try {
+        filter.seller = new mongoose.Types.ObjectId(sellerId);
+        console.log(`[Products] Filtering by seller: ${sellerId}`);
+      } catch (err) {
+        console.warn(`[Products] Invalid sellerId format: ${sellerId}`);
+      }
+    }
+    
+    console.log(`[Products] Query filter:`, filter);
+    
+    const products = await Product.find(filter)
+      .populate('seller', 'name email')
+      .sort({ displayOrder: 1 });
+    
+    console.log(`[Products] Found ${products.length} products matching the criteria`);
+    console.log(`[Products] Found products:`, products.map(p => ({ name: p.name, productId: p.productId, seller: p.seller })));
+    
+    // Sort products to match the order in productIds array (exact match, case-sensitive)
+    const sortedProducts = trimmedIds
+      .map(id => products.find(p => p.productId === id))
+      .filter(p => p !== undefined);
+    
+    console.log(`[Products] Returning ${sortedProducts.length} sorted products`);
+    
+    res.json({ products: sortedProducts });
+  } catch (error) {
+    console.error('Error fetching products by productIds:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch products',
       details: error.message 
     });
   }
