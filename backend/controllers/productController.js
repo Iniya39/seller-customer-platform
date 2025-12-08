@@ -1,6 +1,12 @@
 // controllers/productController.js
 import Product from '../models/productModel.js';
 
+// Helper to build absolute file URLs that work across devices.
+// Prefer PUBLIC_BASE_URL (e.g., http://192.168.1.7:5000) so mobile clients can load images.
+const getBaseUrl = (req) => {
+  return process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+};
+
 // Create a new product
 export const createProduct = async (req, res) => {
   try {
@@ -111,6 +117,8 @@ export const createProduct = async (req, res) => {
     let photoUrl = null;
     let photoUrls = [];
     
+    const baseUrl = getBaseUrl(req);
+
     if (req.files && Object.keys(req.files).length > 0) {
       // Check if files are named 'photos' (multiple) or 'photo' (single)
       const photoFiles = req.files.photos || [];
@@ -118,7 +126,7 @@ export const createProduct = async (req, res) => {
       
       if (photoFiles && photoFiles.length > 0) {
         // Multiple photos
-        photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+        photoUrls = photoFiles.map(file => `${baseUrl}/uploads/${file.filename}`);
         
         // Set the first photo as the main photo for backward compatibility
         if (photoUrls.length > 0) {
@@ -126,7 +134,7 @@ export const createProduct = async (req, res) => {
         }
       } else if (singlePhoto) {
         // Single photo (backward compatibility)
-        photoUrl = `${req.protocol}://${req.get('host')}/uploads/${singlePhoto.filename}`;
+        photoUrl = `${baseUrl}/uploads/${singlePhoto.filename}`;
         photoUrls = [photoUrl];
       }
     }
@@ -341,6 +349,8 @@ export const updateProduct = async (req, res) => {
       }
     }
 
+    const baseUrl = getBaseUrl(req);
+
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (req.body.brand !== undefined) updateData.brand = req.body.brand;
@@ -369,7 +379,7 @@ export const updateProduct = async (req, res) => {
       
       if (photoFiles && photoFiles.length > 0) {
         // New uploaded photos
-        const newPhotoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+        const newPhotoUrls = photoFiles.map(file => `${baseUrl}/uploads/${file.filename}`);
         allPhotos = [...existingPhotos, ...newPhotoUrls];
         
         updateData.photos = allPhotos;
@@ -378,7 +388,7 @@ export const updateProduct = async (req, res) => {
         }
       } else if (singlePhoto) {
         // Single photo (backward compatibility)
-        updateData.photo = `${req.protocol}://${req.get('host')}/uploads/${singlePhoto.filename}`;
+        updateData.photo = `${baseUrl}/uploads/${singlePhoto.filename}`;
         allPhotos = [updateData.photo];
         updateData.photos = allPhotos;
       }
