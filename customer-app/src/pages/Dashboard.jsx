@@ -9,6 +9,44 @@ import { useCart } from '../hooks/useCart'
 import { getCurrentUser, getUserId } from '../utils/userUtils'
 import resolveImageUrl from '../utils/imageUtils'
 
+// Hook to fetch logo from ImageKit
+const useLogo = () => {
+  const [logoUrl, setLogoUrl] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+        const response = await fetch(`${apiUrl}/logo`)
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data?.url) {
+            setLogoUrl(data.data.url)
+          } else {
+            // Fallback to local logo if ImageKit logo not found
+            setLogoUrl(resolveImageUrl('/uploads/dreamsync-logo.svg'))
+          }
+        } else {
+          // Fallback to local logo if API fails
+          setLogoUrl(resolveImageUrl('/uploads/dreamsync-logo.svg'))
+        }
+      } catch (error) {
+        console.error('Error fetching logo:', error)
+        // Fallback to local logo on error
+        setLogoUrl(resolveImageUrl('/uploads/dreamsync-logo.svg'))
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLogo()
+  }, [])
+
+  return { logoUrl, loading }
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   
@@ -25,6 +63,7 @@ export default function Dashboard() {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { fetchCartCount } = useCart()
+  const { logoUrl, loading: logoLoading } = useLogo()
 
 
 
@@ -120,11 +159,20 @@ export default function Dashboard() {
           flexWrap: 'wrap',
           textAlign: 'center'
         }}>
-          <img
-            src={resolveImageUrl('/uploads/dreamsync-logo.svg')}
-            alt="DreamSync Creations logo"
-            style={{ height: '52px', width: 'auto' }}
-          />
+          {!logoLoading && logoUrl && (
+            <img
+              src={logoUrl}
+              alt="DreamSync Creations logo"
+              style={{ height: '52px', width: 'auto' }}
+              onError={(e) => {
+                // Fallback to local logo if ImageKit URL fails to load
+                e.target.src = resolveImageUrl('/uploads/dreamsync-logo.svg')
+              }}
+            />
+          )}
+          {logoLoading && (
+            <div style={{ height: '52px', width: '52px', background: '#e5e7eb', borderRadius: '4px' }} />
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', letterSpacing: '0.02em' }}>
               DreamSync Creations

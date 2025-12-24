@@ -88,23 +88,86 @@ export const uploadMultipleImagesToImageKit = async (files, baseFileName, folder
 };
 
 /**
- * Delete an image from ImageKit using file ID
- * @param {string} fileId - ImageKit file ID
+ * Get ImageKit fileId from URL or filePath
+ * ImageKit URLs don't contain fileId directly, so we need to look it up using listFiles
+ * @param {string} imageUrl - ImageKit URL or filePath
+ * @returns {Promise<string|null>} - FileId if found, null otherwise
+ */
+export const getImageKitFileId = async (imageUrl) => {
+  try {
+    if (!imageUrl || typeof imageUrl !== 'string') return null;
+
+    // Extract filePath from URL
+    const filePath = extractImageKitFilePath(imageUrl);
+    if (!filePath) return null;
+
+    // Extract folder path and filename
+    const pathParts = filePath.split('/').filter(p => p);
+    const fileName = pathParts[pathParts.length - 1];
+    const folderPath = pathParts.length > 1 ? '/' + pathParts.slice(0, -1).join('/') : '/';
+
+    try {
+      // List files in the folder and search for matching filePath or name
+      // Note: ImageKit listFiles may require pagination for large folders
+      const files = await imagekit.listFiles({
+        path: folderPath,
+        limit: 1000 // Get enough results to find the file
+      });
+
+      if (files && Array.isArray(files)) {
+        // First, try to find exact match by filePath
+        const exactMatch = files.find(file => file.filePath === filePath);
+        if (exactMatch && exactMatch.fileId) {
+          return exactMatch.fileId;
+        }
+
+        // Fallback: find by filename (name field)
+        const nameMatch = files.find(file => file.name === fileName);
+        if (nameMatch && nameMatch.fileId) {
+          return nameMatch.fileId;
+        }
+      }
+    } catch (listError) {
+      console.warn(`Could not list files for path ${filePath}:`, listError.message);
+      // Continue to return null - deletion will be skipped
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Error getting fileId from ImageKit URL ${imageUrl}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Delete an image from ImageKit using file ID or URL
+ * @param {string} fileIdOrUrl - ImageKit file ID or URL
  * @returns {Promise<boolean>} - True if deletion successful
  */
-export const deleteImageFromImageKit = async (fileId) => {
+export const deleteImageFromImageKit = async (fileIdOrUrl) => {
   try {
-    if (!fileId) {
-      console.warn('No fileId provided for ImageKit deletion');
+    if (!fileIdOrUrl) {
+      console.warn('No fileId or URL provided for ImageKit deletion');
       return false;
+    }
+
+    let fileId = fileIdOrUrl;
+
+    // If it's a URL, extract fileId first
+    if (isImageKitUrl(fileIdOrUrl)) {
+      fileId = await getImageKitFileId(fileIdOrUrl);
+      if (!fileId) {
+        console.warn(`Could not find fileId for ImageKit URL: ${fileIdOrUrl}`);
+        return false;
+      }
     }
 
     // ImageKit deleteFile method requires fileId
     await imagekit.deleteFile(fileId);
-    console.log(`Successfully deleted image from ImageKit: ${fileId}`);
+    console.log(`Successfully deleted image from ImageKit: ${fileId} (${fileIdOrUrl})`);
     return true;
   } catch (error) {
-    console.error(`Error deleting image from ImageKit (fileId: ${fileId}):`, error);
+    console.error(`Error deleting image from ImageKit (${fileIdOrUrl}):`, error);
     // Don't throw - continue even if deletion fails (image might already be deleted)
     return false;
   }

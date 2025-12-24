@@ -35,13 +35,13 @@ const extractFilenameFromUrl = (url) => {
 };
 
 // Helper to delete image from ImageKit or local storage
-const deleteImageFile = async (imageUrl, fileId = null) => {
+const deleteImageFile = async (imageUrl) => {
   try {
     if (!imageUrl) return;
     
     // If it's an ImageKit URL, delete from ImageKit
-    if (isImageKitUrl(imageUrl) && fileId) {
-      await deleteImageFromImageKit(fileId);
+    if (isImageKitUrl(imageUrl)) {
+      await deleteImageFromImageKit(imageUrl);
       return;
     }
     
@@ -61,11 +61,10 @@ const deleteImageFile = async (imageUrl, fileId = null) => {
 };
 
 // Helper to delete multiple image files
-const deleteImageFiles = async (imageUrls, fileIds = {}) => {
+const deleteImageFiles = async (imageUrls) => {
   if (!Array.isArray(imageUrls)) return;
   for (const url of imageUrls) {
-    const fileId = fileIds[url] || null;
-    await deleteImageFile(url, fileId);
+    await deleteImageFile(url);
   }
 };
 
@@ -338,7 +337,7 @@ export const createProduct = async (req, res) => {
       // Note: This is best effort - ImageKit images will remain if deletion fails
       if (photoUrls.length > 0) {
         console.warn('[createProduct] Product creation failed, attempting to clean up ImageKit images');
-        await deleteImageFiles(photoUrls, imageKitFileIds);
+        await deleteImageFiles(photoUrls);
       }
       throw error; // Re-throw to be caught by outer catch
     }
@@ -678,17 +677,51 @@ export const updateProduct = async (req, res) => {
         });
       }
     } else {
-      // No new files uploaded - keep existing photos unless explicitly changed
-      if (photo !== undefined && photo !== null && photo !== '') {
+      // No new files uploaded - handle photo updates/removals
+      // Frontend sends 'existingPhotos' array with photos to keep
+      const existingPhotosToKeep = req.body.existingPhotos;
+      
+      if (existingPhotosToKeep !== undefined) {
+        // Frontend explicitly sent which photos to keep
+        // Convert to array if it's a string
+        const photosToKeep = Array.isArray(existingPhotosToKeep) 
+          ? existingPhotosToKeep 
+          : (typeof existingPhotosToKeep === 'string' ? JSON.parse(existingPhotosToKeep || '[]') : []);
+        
+        // Find photos that were removed (existing photos not in the keep list)
+        const photosToKeepSet = new Set(photosToKeep);
+        
+        // Check main photo
+        if (existingPhoto && isImageKitUrl(existingPhoto) && !photosToKeepSet.has(existingPhoto)) {
+          imagesToDelete.push(existingPhoto);
+        }
+        
+        // Check photos array
+        if (existingPhotos && Array.isArray(existingPhotos)) {
+          existingPhotos.forEach(url => {
+            if (url && isImageKitUrl(url) && !photosToKeepSet.has(url)) {
+              imagesToDelete.push(url);
+            }
+          });
+        }
+        
+        // Update product with photos to keep
+        updateData.photos = photosToKeep;
+        updateData.photo = photosToKeep.length > 0 ? photosToKeep[0] : null;
+      } else if (photo !== undefined && photo !== null && photo !== '') {
         // Photo URL provided directly - replace existing
-        if (existingPhoto && existingPhoto !== photo) {
+        if (existingPhoto && isImageKitUrl(existingPhoto) && existingPhoto !== photo) {
           imagesToDelete.push(existingPhoto);
         }
         if (existingPhotos && existingPhotos.length > 0) {
           const photoInExisting = existingPhotos.includes(photo);
           if (!photoInExisting) {
-            // New photo URL provided, mark old ones for deletion
-            imagesToDelete.push(...existingPhotos);
+            // New photo URL provided, mark old ImageKit ones for deletion
+            existingPhotos.forEach(url => {
+              if (isImageKitUrl(url)) {
+                imagesToDelete.push(url);
+              }
+            });
           }
         }
         updateData.photo = photo;
@@ -698,11 +731,11 @@ export const updateProduct = async (req, res) => {
         const newPhotos = Array.isArray(req.body.photos) ? req.body.photos : JSON.parse(req.body.photos || '[]');
         // Find photos to delete (ones not in new list)
         const photosToKeep = new Set(newPhotos);
-        if (existingPhoto && !photosToKeep.has(existingPhoto)) {
+        if (existingPhoto && isImageKitUrl(existingPhoto) && !photosToKeep.has(existingPhoto)) {
           imagesToDelete.push(existingPhoto);
         }
         existingPhotos.forEach(existing => {
-          if (!photosToKeep.has(existing)) {
+          if (isImageKitUrl(existing) && !photosToKeep.has(existing)) {
             imagesToDelete.push(existing);
           }
         });
@@ -747,7 +780,8 @@ export const updateProduct = async (req, res) => {
 
       // Delete old ImageKit images only after successful update
       if (imagesToDelete.length > 0) {
-        await deleteImageFiles(imagesToDelete, imageKitFileIdsToDelete);
+        console.log(`[updateProduct] Deleting ${imagesToDelete.length} removed images from ImageKit`);
+        await deleteImageFiles(imagesToDelete);
       }
 
       res.json({
