@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { clearAuthToken } from '../utils/userUtils'
 
 export default function UserProfileIcon({ onProfileClick }) {
   const [user, setUser] = useState(null)
@@ -14,6 +15,7 @@ export default function UserProfileIcon({ onProfileClick }) {
 
   const handleLogout = () => {
     localStorage.removeItem('user')
+    clearAuthToken() // Clear authentication token and expiry
     window.location.href = '/auth'
   }
 

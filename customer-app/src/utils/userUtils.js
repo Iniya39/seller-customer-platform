@@ -92,3 +92,56 @@ export const isProfileComplete = (userData) => {
     user.address?.state && user.address?.pincode
   )
 }
+
+// Authentication utilities for token management with 7-day expiry
+
+// Store authentication token with expiry timestamp (7 days from now)
+export const setAuthToken = (token) => {
+  if (!token) return
+  
+  const expiryDate = new Date()
+  expiryDate.setDate(expiryDate.getDate() + 7) // 7 days from now
+  
+  localStorage.setItem('authToken', token)
+  localStorage.setItem('authTokenExpiry', expiryDate.toISOString())
+}
+
+// Get authentication token
+export const getAuthToken = () => {
+  return localStorage.getItem('authToken')
+}
+
+// Check if authentication token is valid (exists and not expired)
+export const isAuthenticated = () => {
+  const token = getAuthToken()
+  const expiryStr = localStorage.getItem('authTokenExpiry')
+  
+  // No token or no expiry means not authenticated
+  if (!token || !expiryStr) {
+    return false
+  }
+  
+  // Check if token has expired
+  const expiryDate = new Date(expiryStr)
+  const now = new Date()
+  
+  if (now > expiryDate) {
+    // Token expired, clear it
+    clearAuthToken()
+    return false
+  }
+  
+  return true
+}
+
+// Clear authentication token and expiry
+export const clearAuthToken = () => {
+  localStorage.removeItem('authToken')
+  localStorage.removeItem('authTokenExpiry')
+}
+
+// Get token expiry date (for debugging/info purposes)
+export const getTokenExpiry = () => {
+  const expiryStr = localStorage.getItem('authTokenExpiry')
+  return expiryStr ? new Date(expiryStr) : null
+}

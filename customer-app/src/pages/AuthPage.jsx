@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { setAuthToken } from '../utils/userUtils'
 
 export default function AuthPage() {
   const [error, setError] = useState('')
@@ -82,9 +83,16 @@ export default function AuthPage() {
                 }
               }
               
+              // Store user data
               localStorage.setItem('user', JSON.stringify(userData))
               localStorage.setItem('lastLogin', new Date().toISOString())
               localStorage.setItem('lastLoginTime', new Date().toISOString())
+              
+              // Store authentication token with 7-day expiry
+              if (data.token) {
+                setAuthToken(data.token)
+              }
+              
               window.location.href = '/dashboard'
             } catch (err) {
               setError(err.message)

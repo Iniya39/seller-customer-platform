@@ -500,7 +500,7 @@ export default function CustomerManagement({ user }) {
               border: "1px solid rgba(255, 255, 255, 0.2)",
               fontWeight: "600",
               fontSize: "0.95rem",
-              color: "#fff"
+              color: "#000000"
             }}>
               <div>Name</div>
               <div>Phone Number</div>
@@ -524,7 +524,7 @@ export default function CustomerManagement({ user }) {
                 {/* Name */}
                 <div>
                   <div style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: "0.25rem", display: "none" }}>Name</div>
-                  <div style={{ color: "#ffffff", fontWeight: "600", fontSize: "1.1rem" }}>
+                  <div style={{ color: "#000000", fontWeight: "600", fontSize: "1.1rem" }}>
                     {customer.name || '—'}
                   </div>
                 </div>
@@ -532,7 +532,7 @@ export default function CustomerManagement({ user }) {
                 {/* Phone */}
                 <div>
                   <div style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: "0.25rem", display: "none" }}>Phone</div>
-                  <div style={{ color: "#ffffff", fontSize: "1rem" }}>
+                  <div style={{ color: "#000000", fontSize: "1rem" }}>
                     {customer.phone || '—'}
                   </div>
                 </div>
@@ -540,21 +540,21 @@ export default function CustomerManagement({ user }) {
                 {/* Address */}
                 <div>
                   <div style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: "0.25rem", display: "none" }}>Address</div>
-                  <div style={{ color: "#ffffff", fontSize: "0.95rem", lineHeight: 1.5 }}>
+                  <div style={{ color: "#000000", fontSize: "0.95rem", lineHeight: 1.5 }}>
                     {customer?.address?.street ? (
                       <>
-                        <div style={{ fontWeight: "500", color: "#ffffff" }}>{customer.address.street}</div>
-                        <div style={{ color: "#ffffff", fontSize: "0.9rem" }}>
+                        <div style={{ fontWeight: "500", color: "#000000" }}>{customer.address.street}</div>
+                        <div style={{ color: "#000000", fontSize: "0.9rem" }}>
                           {customer.address.city || ''}{customer.address.city && customer.address.state ? ', ' : ''}
                           {customer.address.state || ''}
                           {customer.address.pincode ? ` - ${customer.address.pincode}` : ''}
                         </div>
                         {customer.address.country && customer.address.country !== 'India' && (
-                          <div style={{ color: "#ffffff", fontSize: "0.85rem" }}>{customer.address.country}</div>
+                          <div style={{ color: "#000000", fontSize: "0.85rem" }}>{customer.address.country}</div>
                         )}
                       </>
                     ) : (
-                      <div style={{ color: "#ffffff", fontStyle: "italic" }}>No address provided</div>
+                      <div style={{ color: "#000000", fontStyle: "italic" }}>No address provided</div>
                     )}
                   </div>
                 </div>

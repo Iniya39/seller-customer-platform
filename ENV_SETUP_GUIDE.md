@@ -10,14 +10,14 @@ You need to configure environment variables in **3 locations**:
 
 **Required Variable:**
 ```env
-VITE_API_URL=http://192.168.0.228:5000/api
+VITE_API_URL=http://192.168.0.154:5000/api
 ```
 
 **Important Notes:**
-- Replace `192.168.0.228` with your actual server IP address (the IP that mobile devices can access)
+- Replace `192.168.0.154` with your actual server IP address (the IP that mobile devices can access)
 - Use `http://` (not `https://`) unless you have SSL configured
 - Include `/api` at the end
-- This is used by `resolveImageUrl()` to build full image URLs like: `http://192.168.0.228:5000/uploads/...`
+- This is used by `resolveImageUrl()` to build full image URLs like: `http://192.168.0.154:5000/uploads/...`
 
 **Example:**
 ```env
@@ -25,7 +25,7 @@ VITE_API_URL=http://192.168.0.228:5000/api
 VITE_API_URL=http://localhost:5000/api
 
 # For mobile access (use your computer's IP address)
-VITE_API_URL=http://192.168.0.228:5000/api
+VITE_API_URL=http://192.168.0.154:5000/api
 ```
 
 ---
@@ -34,7 +34,7 @@ VITE_API_URL=http://192.168.0.228:5000/api
 
 **Required Variables:**
 ```env
-PUBLIC_BASE_URL=http://192.168.0.228:5000
+PUBLIC_BASE_URL=http://192.168.0.154:5000
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
 ```
@@ -42,12 +42,12 @@ MONGODB_URI=your_mongodb_connection_string
 **Important Notes:**
 - `PUBLIC_BASE_URL` should be the **same IP address** as `VITE_API_URL` (without `/api`)
 - This is used when products are created/updated to generate image URLs in the database
-- Replace `192.168.0.228` with your actual server IP address
+- Replace `192.168.0.154` with your actual server IP address
 - `PORT` defaults to 5000 if not set
 
 **Example:**
 ```env
-PUBLIC_BASE_URL=http://192.168.0.228:5000
+PUBLIC_BASE_URL=http://192.168.0.154:5000
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/your-database-name
 ```
@@ -58,7 +58,7 @@ MONGODB_URI=mongodb://localhost:27017/your-database-name
 
 **Required Variable:**
 ```env
-VITE_API_URL=http://192.168.0.228:5000/api
+VITE_API_URL=http://192.168.0.154:5000/api
 ```
 
 **Important Notes:**
@@ -67,7 +67,7 @@ VITE_API_URL=http://192.168.0.228:5000/api
 
 **Example:**
 ```env
-VITE_API_URL=http://192.168.0.228:5000/api
+VITE_API_URL=http://192.168.0.154:5000/api
 ```
 
 ---
@@ -78,13 +78,13 @@ VITE_API_URL=http://192.168.0.228:5000/api
 1. Open Command Prompt
 2. Type: `ipconfig`
 3. Look for "IPv4 Address" under your active network adapter
-4. Example: `192.168.0.228`
+4. Example: `192.168.0.154`
 
 ### Mac/Linux:
 1. Open Terminal
 2. Type: `ifconfig` or `ip addr`
 3. Look for your network interface (usually `en0` or `wlan0`)
-4. Find the `inet` address (e.g., `192.168.0.228`)
+4. Find the `inet` address (e.g., `192.168.0.154`)
 
 ---
 
@@ -93,7 +93,7 @@ VITE_API_URL=http://192.168.0.228:5000/api
 - [ ] Create `customer-app/.env` with `VITE_API_URL=http://YOUR_IP:5000/api`
 - [ ] Create `backend/.env` with `PUBLIC_BASE_URL=http://YOUR_IP:5000`
 - [ ] Create `seller-app/.env` with `VITE_API_URL=http://YOUR_IP:5000/api`
-- [ ] Replace `YOUR_IP` with your actual IP address (e.g., `192.168.0.228`)
+- [ ] Replace `YOUR_IP` with your actual IP address (e.g., `192.168.0.154`)
 - [ ] Restart all servers after creating/updating .env files
 - [ ] Ensure your firewall allows connections on port 5000
 - [ ] Test on mobile device using the same network

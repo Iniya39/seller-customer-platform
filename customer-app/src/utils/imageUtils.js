@@ -33,10 +33,10 @@ export const resolveImageUrl = (url) => {
     
     // Replace localhost/127.0.0.1 or hardcoded IPs with the actual server IP for mobile compatibility
     if (cleanApi) {
-      // Extract the protocol and host from cleanApi (e.g., http://192.168.0.228:5000)
+      // Extract the protocol and host from cleanApi (e.g., http://192.168.0.154:5000)
       const apiMatch = cleanApi.match(/^(https?:\/\/[^\/]+)/i);
       if (apiMatch) {
-        const apiHost = apiMatch[1]; // e.g., "http://192.168.0.228:5000"
+        const apiHost = apiMatch[1]; // e.g., "http://192.168.0.154:5000"
         
         // Extract the hostname from the current URL to check if it needs replacement
         let urlObj;

@@ -28,7 +28,7 @@ MONGO_URI=your_mongodb_connection_string
 VITE_API_URL=http://YOUR_IP:5000/api
 ```
 
-**Replace `YOUR_IP` with your actual IP address (e.g., `192.168.0.228`)**
+**Replace `YOUR_IP` with your actual IP address (e.g., `192.168.0.154`)**
 
 ## Testing Steps
 
@@ -37,7 +37,7 @@ VITE_API_URL=http://YOUR_IP:5000/api
 ```cmd
 ipconfig
 ```
-Look for "IPv4 Address" (e.g., `192.168.0.228`)
+Look for "IPv4 Address" (e.g., `192.168.0.154`)
 
 **Mac/Linux:**
 ```bash

@@ -1,13 +1,20 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { isAuthenticated } from '../utils/userUtils'
 
 export default function SplashScreen() {
   const navigate = useNavigate()
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // After splash, go straight to dashboard
-      navigate('/dashboard', { replace: true })
+      // Check if user is authenticated
+      if (isAuthenticated()) {
+        // User has valid token, go to dashboard
+        navigate('/dashboard', { replace: true })
+      } else {
+        // User not authenticated or token expired, go to login
+        navigate('/auth', { replace: true })
+      }
     }, 2000) // 2 seconds splash
 
     return () => clearTimeout(timer)
