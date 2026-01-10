@@ -272,6 +272,13 @@ export default function EditItem() {
       return;
     }
 
+    // Validate that at least one image is uploaded (either new files or existing photos)
+    const existingPhotoUrls = photos.filter(photo => typeof photo === 'string');
+    if (photoFiles.length === 0 && existingPhotoUrls.length === 0) {
+      alert("Please upload at least one product image");
+      return;
+    }
+
     // Validate variants if hasVariations is true
     if (item.hasVariations) {
       if (variants.length === 0) {
@@ -332,12 +339,13 @@ export default function EditItem() {
         formData.append('photos', file);
       });
       
-      // Also append existing photos URLs that haven't been changed
-      // Get photos that are URLs (strings, not File objects)
-      const existingPhotoUrls = photos.filter(photo => typeof photo === 'string' && photo.startsWith('http'));
-      existingPhotoUrls.forEach((url) => {
-        formData.append('existingPhotos', url);
-      });
+      // Always send existing photos URLs that should be kept (all current photos that are URLs, not File objects)
+      // This includes both ImageKit URLs and any other URLs
+      // Backend will compare with existing product photos to find what was deleted
+      // This is important: even when uploading new files, we need to tell backend which existing photos to keep
+      // Note: existingPhotoUrls was already calculated above for validation
+      // Send as JSON string for reliable parsing on backend
+      formData.append('existingPhotos', JSON.stringify(existingPhotoUrls));
       
       const response = await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/products/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }

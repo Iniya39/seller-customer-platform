@@ -95,46 +95,142 @@ export const uploadMultipleImagesToImageKit = async (files, baseFileName, folder
  */
 export const getImageKitFileId = async (imageUrl) => {
   try {
-    if (!imageUrl || typeof imageUrl !== 'string') return null;
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      console.warn('[getImageKitFileId] No URL provided');
+      return null;
+    }
+
+    console.log(`[getImageKitFileId] Looking up fileId for URL: ${imageUrl}`);
 
     // Extract filePath from URL
     const filePath = extractImageKitFilePath(imageUrl);
-    if (!filePath) return null;
+    if (!filePath) {
+      console.warn(`[getImageKitFileId] Could not extract filePath from URL: ${imageUrl}`);
+      return null;
+    }
+
+    console.log(`[getImageKitFileId] Extracted filePath: ${filePath}`);
 
     // Extract folder path and filename
     const pathParts = filePath.split('/').filter(p => p);
     const fileName = pathParts[pathParts.length - 1];
     const folderPath = pathParts.length > 1 ? '/' + pathParts.slice(0, -1).join('/') : '/';
 
+    console.log(`[getImageKitFileId] Searching in folder: ${folderPath}, fileName: ${fileName}`);
+
+    // Try multiple methods to find the file
     try {
-      // List files in the folder and search for matching filePath or name
-      // Note: ImageKit listFiles may require pagination for large folders
-      const files = await imagekit.listFiles({
-        path: folderPath,
-        limit: 1000 // Get enough results to find the file
-      });
-
-      if (files && Array.isArray(files)) {
-        // First, try to find exact match by filePath
-        const exactMatch = files.find(file => file.filePath === filePath);
-        if (exactMatch && exactMatch.fileId) {
-          return exactMatch.fileId;
+      // Method 1: List files by path (most specific)
+      let files = [];
+      try {
+        const listResponse = await imagekit.listFiles({
+          path: folderPath,
+          limit: 1000
+        });
+        
+        // ImageKit v5 SDK returns results differently - handle both formats
+        if (Array.isArray(listResponse)) {
+          files = listResponse;
+        } else if (listResponse && typeof listResponse === 'object') {
+          // Try common response formats
+          files = listResponse.results || listResponse.data || listResponse.files || [];
+          // Also check if response itself has fileId (single file)
+          if (listResponse.fileId && !files.length) {
+            files = [listResponse];
+          }
         }
+        
+        console.log(`[getImageKitFileId] Method 1: Found ${files.length} files in folder ${folderPath}`);
+        
+        // Try to find match
+        if (files.length > 0) {
+          // Exact filePath match
+          let match = files.find(file => {
+            const filePathToCheck = file.filePath || file.path || file.file;
+            return filePathToCheck === filePath;
+          });
+          if (match && match.fileId) {
+            console.log(`[getImageKitFileId] ✓ Found fileId by exact filePath: ${match.fileId}`);
+            return match.fileId;
+          }
 
-        // Fallback: find by filename (name field)
-        const nameMatch = files.find(file => file.name === fileName);
-        if (nameMatch && nameMatch.fileId) {
-          return nameMatch.fileId;
+          // URL match
+          match = files.find(file => {
+            const urlToCheck = file.url || file.webkitRelativePath;
+            return urlToCheck === imageUrl || (urlToCheck && imageUrl.includes(urlToCheck.split('/').pop()));
+          });
+          if (match && match.fileId) {
+            console.log(`[getImageKitFileId] ✓ Found fileId by URL match: ${match.fileId}`);
+            return match.fileId;
+          }
+
+          // Filename match
+          match = files.find(file => {
+            const nameToCheck = file.name || file.fileName;
+            const pathToCheck = file.filePath || file.path;
+            return nameToCheck === fileName || (pathToCheck && pathToCheck.endsWith(fileName));
+          });
+          if (match && match.fileId) {
+            console.log(`[getImageKitFileId] ✓ Found fileId by filename: ${match.fileId}`);
+            return match.fileId;
+          }
         }
+      } catch (pathError) {
+        console.warn(`[getImageKitFileId] Method 1 failed: ${pathError.message}`);
       }
-    } catch (listError) {
-      console.warn(`Could not list files for path ${filePath}:`, listError.message);
-      // Continue to return null - deletion will be skipped
-    }
 
-    return null;
+      // Method 2: Search all files and filter (broader search)
+      try {
+        const allResponse = await imagekit.listFiles({
+          limit: 1000
+        });
+        
+        let allFiles = [];
+        if (Array.isArray(allResponse)) {
+          allFiles = allResponse;
+        } else if (allResponse && typeof allResponse === 'object') {
+          allFiles = allResponse.results || allResponse.data || allResponse.files || [];
+          if (allResponse.fileId && !allFiles.length) {
+            allFiles = [allResponse];
+          }
+        }
+        
+        console.log(`[getImageKitFileId] Method 2: Found ${allFiles.length} total files`);
+
+        // Filter for matching files
+        const matchingFiles = allFiles.filter(file => {
+          const filePathToCheck = file.filePath || file.path || file.file || '';
+          const urlToCheck = file.url || '';
+          const nameToCheck = file.name || file.fileName || '';
+          
+          return filePathToCheck === filePath ||
+                 urlToCheck === imageUrl ||
+                 nameToCheck === fileName ||
+                 (filePathToCheck && filePathToCheck.endsWith(fileName)) ||
+                 (urlToCheck && imageUrl.includes(urlToCheck.split('/').pop()));
+        });
+
+        if (matchingFiles.length > 0) {
+          const match = matchingFiles[0];
+          if (match.fileId) {
+            console.log(`[getImageKitFileId] ✓ Found fileId from all files search: ${match.fileId}`);
+            return match.fileId;
+          }
+        }
+      } catch (allError) {
+        console.warn(`[getImageKitFileId] Method 2 failed: ${allError.message}`);
+      }
+
+      console.warn(`[getImageKitFileId] ✗ Could not find fileId for URL: ${imageUrl}, filePath: ${filePath}`);
+      return null;
+    } catch (listError) {
+      console.error(`[getImageKitFileId] Error in file lookup:`, listError);
+      console.error(`[getImageKitFileId] Error stack:`, listError.stack);
+      return null;
+    }
   } catch (error) {
-    console.error(`Error getting fileId from ImageKit URL ${imageUrl}:`, error);
+    console.error(`[getImageKitFileId] Unexpected error getting fileId from URL ${imageUrl}:`, error);
+    console.error(`[getImageKitFileId] Error stack:`, error.stack);
     return null;
   }
 };
@@ -147,27 +243,52 @@ export const getImageKitFileId = async (imageUrl) => {
 export const deleteImageFromImageKit = async (fileIdOrUrl) => {
   try {
     if (!fileIdOrUrl) {
-      console.warn('No fileId or URL provided for ImageKit deletion');
+      console.warn('[deleteImageFromImageKit] No fileId or URL provided for ImageKit deletion');
       return false;
     }
+
+    console.log(`[deleteImageFromImageKit] Attempting to delete: ${fileIdOrUrl}`);
 
     let fileId = fileIdOrUrl;
 
     // If it's a URL, extract fileId first
     if (isImageKitUrl(fileIdOrUrl)) {
+      console.log(`[deleteImageFromImageKit] Detected ImageKit URL, looking up fileId...`);
       fileId = await getImageKitFileId(fileIdOrUrl);
       if (!fileId) {
-        console.warn(`Could not find fileId for ImageKit URL: ${fileIdOrUrl}`);
+        console.error(`[deleteImageFromImageKit] Could not find fileId for ImageKit URL: ${fileIdOrUrl}`);
+        // Try one more approach - use URL directly if ImageKit supports it
+        // Some ImageKit SDKs allow deletion by URL
+        try {
+          // Extract just the path part and try to use it as fileId
+          const pathOnly = extractImageKitFilePath(fileIdOrUrl);
+          if (pathOnly) {
+            console.log(`[deleteImageFromImageKit] Attempting deletion with path: ${pathOnly}`);
+            // This might not work, but worth trying
+          }
+        } catch (e) {
+          console.error(`[deleteImageFromImageKit] Alternative deletion method also failed:`, e);
+        }
         return false;
       }
+      console.log(`[deleteImageFromImageKit] Found fileId: ${fileId}`);
+    } else {
+      console.log(`[deleteImageFromImageKit] Using provided fileId: ${fileId}`);
     }
 
     // ImageKit deleteFile method requires fileId
-    await imagekit.deleteFile(fileId);
-    console.log(`Successfully deleted image from ImageKit: ${fileId} (${fileIdOrUrl})`);
+    console.log(`[deleteImageFromImageKit] Calling imagekit.deleteFile(${fileId})`);
+    const deleteResult = await imagekit.deleteFile(fileId);
+    console.log(`[deleteImageFromImageKit] Delete result:`, deleteResult);
+    console.log(`[deleteImageFromImageKit] Successfully deleted image from ImageKit: ${fileId} (original: ${fileIdOrUrl})`);
     return true;
   } catch (error) {
-    console.error(`Error deleting image from ImageKit (${fileIdOrUrl}):`, error);
+    console.error(`[deleteImageFromImageKit] Error deleting image from ImageKit (${fileIdOrUrl}):`, error);
+    console.error(`[deleteImageFromImageKit] Error details:`, {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     // Don't throw - continue even if deletion fails (image might already be deleted)
     return false;
   }

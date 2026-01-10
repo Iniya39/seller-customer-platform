@@ -7,7 +7,13 @@ export default function LoginPage({ setLoggedIn }) {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users/login`, { email, password });
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const loginUrl = `${apiUrl}/users/login`;
+      
+      console.log('Attempting login to:', loginUrl);
+      console.log('Environment variable VITE_API_URL:', import.meta.env.VITE_API_URL);
+      
+      const res = await axios.post(loginUrl, { email, password });
       
       // Save token (optional)
       localStorage.setItem("token", res.data.token);
@@ -15,7 +21,25 @@ export default function LoginPage({ setLoggedIn }) {
       alert("Login successful!");
       setLoggedIn(res.data.user);
     } catch (err) {
-      alert("Login failed: " + (err.response?.data?.error || err.message));
+      console.error('Login error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        code: err.code,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
+      
+      let errorMessage = "Login failed: ";
+      if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+        errorMessage += `Network error - Cannot reach server at ${err.config?.url || 'the API URL'}. Please check if the backend server is running and accessible.`;
+      } else if (err.response?.data?.error) {
+        errorMessage += err.response.data.error;
+      } else {
+        errorMessage += err.message;
+      }
+      
+      alert(errorMessage);
     }
   };
 

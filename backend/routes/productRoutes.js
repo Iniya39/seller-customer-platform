@@ -52,6 +52,6 @@ router.put('/:id', upload.fields([
   { name: 'photos', maxCount: 10 }
 ]), updateProduct);                  // Update product
 router.put('/order/update', updateProductOrder);    // Update product display order
-router.delete('/:id', deleteProduct);               // Delete product (soft delete)
+router.delete('/:id', deleteProduct);               // Delete product (hard delete - permanently removed)
 
 export default router;

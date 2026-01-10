@@ -889,9 +889,9 @@ export default function AddItem({ user }) {
                   width: "90%",
                   maxWidth: "500px"
                 }}>
-                  <h3 style={{ marginBottom: "1rem" }}>Add New Category</h3>
+                  <h3 style={{ marginBottom: "1rem", color: "black" }}>Add New Category</h3>
                   <div style={{ marginBottom: "1rem" }}>
-                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500", color: "black" }}>
                       Category Name *
                     </label>
                     <input
@@ -909,7 +909,7 @@ export default function AddItem({ user }) {
                     />
                   </div>
                   <div style={{ marginBottom: "1rem" }}>
-                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500", color: "black" }}>
                       Description
                     </label>
                     <textarea
@@ -938,7 +938,8 @@ export default function AddItem({ user }) {
                         border: "1px solid #ccc",
                         borderRadius: "4px",
                         background: "white",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        color: "black"
                       }}
                     >
                       Cancel
@@ -1617,7 +1618,7 @@ export default function AddItem({ user }) {
                     cursor: "pointer",
                     transition: "all 0.3s ease",
                     backgroundColor: "#666",
-                    color: "white",
+                    color: "black",
                     border: "none"
                   }}
                   onMouseOver={(e) => e.target.style.backgroundColor = "#555"}
