@@ -9,6 +9,11 @@ import {
 
 const router = express.Router();
 
+// Placeholder GET for /api/cart
+router.get('/', (req, res) => {
+  res.json({ message: 'Cart is empty', items: [] });
+});
+
 // Add item to cart
 router.post('/add', addToCart);
 
