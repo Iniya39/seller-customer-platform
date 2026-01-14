@@ -102,7 +102,7 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', minHeight: '100vh', background: '#f8fafc' }}>
+      <div style={{ padding: '2rem', textAlign: 'center', minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
         <div>Loading orders...</div>
       </div>
     )
@@ -133,7 +133,7 @@ export default function OrdersPage() {
           .order-modal {
             padding: 1rem !important;
             max-width: 100% !important;
-            max-height: 100vh !important;
+            max-height: calc(90dvh - var(--safe-top)) !important;
             border-radius: 0 !important;
           }
           .order-modal-content {
@@ -141,8 +141,8 @@ export default function OrdersPage() {
           }
         }
       `}</style>
-      <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
-        <div className="orders-container" style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
+      <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+        <div className="orders-container" style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '1.5rem 1.25rem' }}>
         {/* Header */}
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>

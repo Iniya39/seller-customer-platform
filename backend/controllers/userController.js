@@ -26,6 +26,7 @@ export const registerUser = async (req, res) => {
 
 // Login user
 export const loginUser = async (req, res) => {
+  console.log("✅ LOGIN ROUTE HIT", req.method, req.originalUrl);
   const { email, password, name } = req.body;
   try {
     let user;
@@ -56,6 +57,9 @@ export const loginUser = async (req, res) => {
 export const updateProfile = async (req, res) => {
   const { userId } = req.params;
   const { name, phone, address } = req.body;
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
   
   try {
     const user = await User.findById(userId);
@@ -95,7 +99,12 @@ export const updateProfile = async (req, res) => {
 
 // Get user profile
 export const getUserProfile = async (req, res) => {
+  console.log("❌ PROFILE ROUTE HIT", req.params.userId);
   const { userId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
   
   try {
     const user = await User.findById(userId);

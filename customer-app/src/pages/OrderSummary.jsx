@@ -356,8 +356,8 @@ export default function OrderSummary() {
           }
         }
       `}</style>
-      <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
-        <div className="order-summary-container" style={{ maxWidth: 800, margin: '0 auto', padding: '1.5rem' }}>
+      <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+        <div className="order-summary-container" style={{ maxWidth: 'min(800px, 100%)', margin: '0 auto', padding: '1.5rem 1.25rem' }}>
         <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             onClick={handleBack}

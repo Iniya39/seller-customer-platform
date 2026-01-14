@@ -36,7 +36,7 @@ export default function OrderDetails() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh", paddingTop: "var(--safe-top)", paddingBottom: "var(--safe-bottom)" }}>
         <p>Loading order...</p>
       </div>
     );
@@ -44,7 +44,7 @@ export default function OrderDetails() {
 
   if (error || !order) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh", paddingTop: "var(--safe-top)", paddingBottom: "var(--safe-bottom)" }}>
         <div>
           <p style={{ marginBottom: "1rem" }}>{error || "Order not found"}</p>
           <button onClick={() => navigate(-1)} style={{ padding: "0.6rem 1rem", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f3f4f6", cursor: "pointer" }}>Go back</button>
@@ -55,11 +55,11 @@ export default function OrderDetails() {
 
   return (
     <div style={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      alignItems: "center", 
-      minHeight: "100vh", 
-      width: "100%", 
+    display: "flex", 
+    flexDirection: "column", 
+    alignItems: "center", 
+    minHeight: "100dvh", 
+    width: "100%", 
       maxWidth: 1000, 
       margin: "0 auto", 
       padding: "2rem",

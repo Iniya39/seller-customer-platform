@@ -34,8 +34,8 @@ export default function OrderSuccess() {
   const { orderId, paymentMethod, amount, orderData } = paymentData
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+      <div style={{ maxWidth: 'min(600px, 100%)', margin: '0 auto', padding: '1.5rem 1.25rem' }}>
         {/* Header with Back */}
         <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button

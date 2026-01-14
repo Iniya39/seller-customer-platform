@@ -8,12 +8,20 @@ export default function LoginPage({ setLoggedIn }) {
   const handleLogin = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
       const loginUrl = `${apiUrl}/users/login`;
       
       console.log('Attempting login to:', loginUrl);
       console.log('Environment variable VITE_API_URL:', import.meta.env.VITE_API_URL);
       
-      const res = await axios.post(loginUrl, { email, password });
+      const res =await axios({
+        method: "post",
+        url: loginUrl,
+        data: { email, password },
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
       
       // Save token (optional)
       localStorage.setItem("token", res.data.token);

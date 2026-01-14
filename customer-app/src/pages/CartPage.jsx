@@ -222,8 +222,8 @@ export default function CartPage() {
           }
         }
       `}</style>
-      <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
-        <div className="cart-container" style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
+      <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+        <div className="cart-container" style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '1.5rem 1.25rem' }}>
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
             <button

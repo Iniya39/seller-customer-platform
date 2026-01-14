@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { setAuthToken } from '../utils/userUtils'
+import { getApiUrl } from '../utils/apiConfig'
 
 export default function AuthPage() {
   const [error, setError] = useState('')
@@ -7,12 +8,14 @@ export default function AuthPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       background: '#ffffff',
-      padding: '2rem'
+      padding: 'clamp(1.25rem, 3vw, 2.5rem)',
+      paddingTop: 'calc(var(--safe-top) + clamp(1.25rem, 3vw, 2.5rem))',
+      paddingBottom: 'calc(var(--safe-bottom) + clamp(1.25rem, 3vw, 2.5rem))'
     }}>
       <div style={{
         width: '100%',
@@ -42,8 +45,9 @@ export default function AuthPage() {
               const name = form.get('name')
 
               // Check if phone number is permitted by seller
-              const checkRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/customers/check`, {
-                method: 'POST',
+              // const checkRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/customers/check`, {
+                const checkRes = await fetch(`${getApiUrl()}/customers/check`, {  
+              method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone })
               })
@@ -66,8 +70,9 @@ export default function AuthPage() {
               }
 
               // Access the app (same as login/signup)
-              const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/customers/login`, {
-                method: 'POST',
+              // const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/customers/login`, {
+                const res = await fetch(`${getApiUrl()}/customers/login`, {  
+              method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone, name })
               })
@@ -172,7 +177,8 @@ const inputStyle = {
 const primaryButtonStyle = {
   marginTop: '0.5rem',
   width: '100%',
-  padding: '0.9rem 1rem',
+          padding: '0.95rem 1rem',
+          minHeight: '48px',
   borderRadius: '10px',
   border: 'none',
   background: '#000000',

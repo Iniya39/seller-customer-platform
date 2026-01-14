@@ -9,8 +9,8 @@ export default function ProductsPage() {
   const searchTerm = location.state?.searchTerm || ''
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+      <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '1.25rem' }}>
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

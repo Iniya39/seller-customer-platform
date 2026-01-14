@@ -83,7 +83,7 @@ export default function Sidebar({ isOpen, onClose }) {
           top: 0,
           left: isOpen ? 0 : '-300px',
           width: '280px',
-          height: '100vh',
+          height: '100dvh',
           background: 'white',
           boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
           zIndex: 999,
@@ -91,7 +91,8 @@ export default function Sidebar({ isOpen, onClose }) {
           display: 'flex',
           flexDirection: 'column',
           padding: '1.5rem',
-          paddingBottom: '2rem'
+          paddingBottom: 'calc(2rem + var(--safe-bottom))',
+          paddingTop: 'calc(1.5rem + var(--safe-top))'
         }}
       >
         {/* Close Button */}

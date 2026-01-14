@@ -73,7 +73,7 @@ export default function Dashboard() {
   }, [])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100dvh', background: '#ffffff', display: 'flex', flexDirection: 'column', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -83,15 +83,17 @@ export default function Dashboard() {
         borderBottom: '1px solid #e5e7eb',
         padding: '1rem 0',
         position: 'sticky',
-        top: 0,
+        top: 'var(--safe-top)',
         zIndex: 100
       }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem' }}>
+        <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '0 1.25rem' }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '1rem'
+            marginBottom: '1rem',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               {/* Menu/Dashboard Icon Button */}
@@ -141,7 +143,7 @@ export default function Dashboard() {
 
       {/* Products List */}
       <div style={{ flex: 1 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem' }}>
+        <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: 'clamp(1.25rem, 3vw, 2rem) 1.25rem' }}>
           <ProductsList searchTerm={searchTerm} />
         </div>
       </div>

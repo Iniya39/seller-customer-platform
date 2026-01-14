@@ -23,7 +23,7 @@ export default function SplashScreen() {
   return (
     <div style={{
       width: '100%',
-      height: '100vh',
+      height: '100dvh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -34,6 +34,8 @@ export default function SplashScreen() {
       right: 0,
       zIndex: 9999,
       padding: '0 1.5rem',
+      paddingTop: 'var(--safe-top)',
+      paddingBottom: 'var(--safe-bottom)',
       boxSizing: 'border-box',
       overflow: 'hidden'
     }}>

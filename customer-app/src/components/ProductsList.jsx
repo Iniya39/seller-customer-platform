@@ -1519,8 +1519,8 @@ function ProductDetailModal({
             padding: 1rem;
             max-width: 100%;
             width: 100%;
-            max-height: 100vh;
-            height: 100vh;
+            max-height: calc(90dvh - var(--safe-top));
+            height: auto;
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
