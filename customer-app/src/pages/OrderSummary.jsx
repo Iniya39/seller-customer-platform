@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { getCurrentUser, getUserId } from '../utils/userUtils'
 import resolveImageUrl from '../utils/imageUtils'
+import { dispatchBackButton } from '../hooks/useBackButton'
 
 export default function OrderSummary() {
   const location = useLocation()
@@ -207,7 +208,12 @@ export default function OrderSummary() {
 
 
   const handleBack = () => {
-    navigate(-1)
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
   }
 
   const handleEdit = () => {

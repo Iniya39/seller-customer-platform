@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser, getUserId } from '../utils/userUtils'
 import resolveImageUrl from '../utils/imageUtils'
+import { useBackButton, dispatchBackButton } from '../hooks/useBackButton'
 
 export default function OrdersPage() {
   const navigate = useNavigate()
@@ -9,6 +10,18 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [activeFilter, setActiveFilter] = useState('all')
+  
+  // Register order details modal with back button handler
+  useBackButton('order-details-modal', !!selectedOrder, () => setSelectedOrder(null))
+
+  const handleBack = () => {
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
+  }
 
   useEffect(() => {
     fetchOrders()
@@ -147,7 +160,7 @@ export default function OrdersPage() {
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               style={{
                 padding: '0.5rem 0.75rem',
                 borderRadius: '8px',

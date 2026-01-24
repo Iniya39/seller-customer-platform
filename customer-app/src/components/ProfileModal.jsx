@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useBackButton } from '../hooks/useBackButton'
 
 export default function ProfileModal({ isOpen, onClose }) {
+  // Register with back button handler
+  useBackButton('profile-modal', isOpen, onClose)
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')

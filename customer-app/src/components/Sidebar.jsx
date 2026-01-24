@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../hooks/useCart'
 import { getUserId, getCurrentUser } from '../utils/userUtils'
+import { useBackButton } from '../hooks/useBackButton'
 
 export default function Sidebar({ isOpen, onClose }) {
+  // Register with back button handler
+  useBackButton('sidebar', isOpen, onClose)
   const navigate = useNavigate()
   const { cartItemCount } = useCart()
   const [unreadAcceptedCount, setUnreadAcceptedCount] = useState(0)

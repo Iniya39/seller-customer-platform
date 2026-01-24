@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { dispatchBackButton } from '../hooks/useBackButton'
 
 export default function PaymentPage() {
   const location = useLocation()
@@ -205,7 +206,18 @@ export default function PaymentPage() {
   }
 
   const handleBackToOrderSummary = () => {
+    // Close any open UI first
+    dispatchBackButton()
     navigate('/order-summary', { state: { orderData } })
+  }
+
+  const handleBack = () => {
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
   }
 
   if (loading) {
@@ -232,7 +244,7 @@ export default function PaymentPage() {
         {/* Header */}
         <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             disabled={processing}
             style={{
               padding: '0.5rem 0.75rem',

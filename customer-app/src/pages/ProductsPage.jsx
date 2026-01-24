@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import ProductsList from '../components/ProductsList'
+import { dispatchBackButton } from '../hooks/useBackButton'
 
 export default function ProductsPage() {
   const navigate = useNavigate()
@@ -8,6 +9,15 @@ export default function ProductsPage() {
   // Get search term from location state if passed from Dashboard
   const searchTerm = location.state?.searchTerm || ''
 
+  const handleBack = () => {
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
+  }
+
   return (
     <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
       <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '1.25rem' }}>
@@ -15,7 +25,7 @@ export default function ProductsPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <button
-                onClick={() => navigate(-1)}
+                onClick={handleBack}
                 style={{
                   padding: '0.5rem 0.75rem',
                   borderRadius: '8px',

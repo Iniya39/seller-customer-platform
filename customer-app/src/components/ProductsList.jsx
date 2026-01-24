@@ -4,6 +4,7 @@ import { useCart } from '../hooks/useCart'
 import { getCurrentUser, getUserId, getUserObject, isProfileComplete } from '../utils/userUtils'
 import resolveImageUrl, { getPlaceholderImage } from '../utils/imageUtils'
 import ProfileModal from './ProfileModal'
+import { useBackButton } from '../hooks/useBackButton'
 
 // Helper function to get discount percentage from product (uses seller-provided discountPercent)
 const getProductDiscountPct = (product) => {
@@ -1386,6 +1387,8 @@ function ProductDetailModal({
   getProductDiscountPct,
   getVariantDiscountPct
 }) {
+  // Register with back button handler
+  useBackButton('product-detail-modal', !!product, onClose)
   return (
     <>
       <style>{`
@@ -1401,6 +1404,8 @@ function ProductDetailModal({
           justify-content: center;
           z-index: 1000;
           padding: 2rem;
+          padding-top: max(2rem, calc(var(--safe-top, 0px) + 1rem));
+          padding-bottom: max(2rem, calc(var(--safe-bottom, 0px) + 1rem));
           overflow-x: hidden;
           width: 100%;
           max-width: 100vw;
@@ -1413,7 +1418,7 @@ function ProductDetailModal({
           padding: 2rem;
           max-width: 800px;
           width: 100%;
-          max-height: 90vh;
+          max-height: calc(100vh - max(4rem, calc(var(--safe-top, 0px) + var(--safe-bottom, 0px) + 2rem)));
           overflow-y: auto;
           overflow-x: hidden;
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -1509,6 +1514,7 @@ function ProductDetailModal({
           .product-detail-modal-overlay {
             padding: 0;
             align-items: flex-start;
+            padding-top: calc(var(--safe-top, 0px) + 1rem);
             overflow-x: hidden;
             width: 100%;
             max-width: 100%;
@@ -1517,14 +1523,16 @@ function ProductDetailModal({
           .product-detail-modal-container {
             border-radius: 0;
             padding: 1rem;
+            padding-top: calc(1rem + 1rem);
             max-width: 100%;
             width: 100%;
-            max-height: calc(90dvh - var(--safe-top));
+            max-height: calc(100dvh - var(--safe-top, 0px) - 2rem);
             height: auto;
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
             box-sizing: border-box;
+            margin-top: 0;
           }
           
           .product-detail-modal-content {
@@ -1610,12 +1618,18 @@ function ProductDetailModal({
             z-index: 20 !important;
           }
           
-          /* Ensure discount badge stays top-right on mobile */
+          /* Ensure discount badge stays top-right on mobile and is fully visible */
           .product-detail-discount-badge {
-            top: -8px !important;
-            right: -8px !important;
+            top: 0.5rem !important;
+            right: 0.5rem !important;
             left: auto !important;
             z-index: 15 !important;
+          }
+          
+          /* Add padding to image container to ensure badge visibility */
+          .product-detail-modal-content > div:first-child {
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
           }
         }
       `}</style>
@@ -1654,7 +1668,7 @@ function ProductDetailModal({
 
         <div className="product-detail-modal-content">
           {/* Product Images */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', paddingTop: '0.5rem' }}>
             {(() => {
               const pct = selectedVariant ? getVariantDiscountPct(selectedVariant) : getProductDiscountPct(product)
               return pct > 0 ? (
@@ -1662,8 +1676,8 @@ function ProductDetailModal({
                   className="product-detail-discount-badge"
                   style={{
                     position: 'absolute',
-                    top: '-8px',
-                    right: '-8px',
+                    top: '0.5rem',
+                    right: '0.5rem',
                     background: '#dc2626',
                     color: 'white',
                     width: '44px',
@@ -1673,7 +1687,8 @@ function ProductDetailModal({
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 700,
-                    zIndex: 5
+                    zIndex: 15,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                   }}>
                   {pct}%
                 </div>

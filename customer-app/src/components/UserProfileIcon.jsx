@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
 import { clearAuthToken } from '../utils/userUtils'
+import { useBackButton } from '../hooks/useBackButton'
 
 export default function UserProfileIcon({ onProfileClick }) {
   const [user, setUser] = useState(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  
+  // Register with back button handler
+  useBackButton('user-profile-dropdown', showDropdown, () => setShowDropdown(false))
 
   useEffect(() => {
     const userData = localStorage.getItem('user')

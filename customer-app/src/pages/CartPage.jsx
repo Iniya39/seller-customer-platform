@@ -4,6 +4,7 @@ import ProfileModal from '../components/ProfileModal'
 import { useCart } from '../hooks/useCart'
 import { getCurrentUser, getUserId, getUserObject, isProfileComplete } from '../utils/userUtils'
 import resolveImageUrl from '../utils/imageUtils'
+import { dispatchBackButton } from '../hooks/useBackButton'
 
 export default function CartPage() {
   const navigate = useNavigate()
@@ -13,6 +14,15 @@ export default function CartPage() {
   const [user, setUser] = useState(null)
   const [pendingCheckout, setPendingCheckout] = useState(false)
   const { cart, loading, fetchCart, updateCartItem, removeFromCart, clearCart } = useCart()
+
+  const handleBack = () => {
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
+  }
 
   const calculateTax = (items) => {
     return items.reduce((sum, item) => {
@@ -227,7 +237,7 @@ export default function CartPage() {
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               style={{
                 padding: '0.5rem 0.75rem',
                 borderRadius: '8px',

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import resolveImageUrl from "../utils/imageUtils";
+import { dispatchBackButton } from "../hooks/useBackButton";
 
 export default function OrderDetails() {
   const { id } = useParams();
@@ -42,12 +43,21 @@ export default function OrderDetails() {
     );
   }
 
+  const handleBack = () => {
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
+  }
+
   if (error || !order) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh", paddingTop: "var(--safe-top)", paddingBottom: "var(--safe-bottom)" }}>
         <div>
           <p style={{ marginBottom: "1rem" }}>{error || "Order not found"}</p>
-          <button onClick={() => navigate(-1)} style={{ padding: "0.6rem 1rem", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f3f4f6", cursor: "pointer" }}>Go back</button>
+          <button onClick={handleBack} style={{ padding: "0.6rem 1rem", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f3f4f6", cursor: "pointer" }}>Go back</button>
         </div>
       </div>
     );
@@ -78,7 +88,7 @@ export default function OrderDetails() {
       }}>
         {/* Close Button */}
         <button 
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           style={{
             position: "absolute",
             top: "1rem",

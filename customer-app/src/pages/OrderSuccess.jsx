@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { dispatchBackButton } from '../hooks/useBackButton'
 
 export default function OrderSuccess() {
   const location = useLocation()
   const navigate = useNavigate()
+
+  const handleBack = () => {
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
+  }
   const [paymentData, setPaymentData] = useState(null)
 
   useEffect(() => {
@@ -39,7 +49,7 @@ export default function OrderSuccess() {
         {/* Header with Back */}
         <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             style={{
               padding: '0.5rem 0.75rem',
               borderRadius: '8px',

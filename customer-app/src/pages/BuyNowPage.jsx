@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import ProfileModal from '../components/ProfileModal'
 import resolveImageUrl from '../utils/imageUtils'
+import { dispatchBackButton } from '../hooks/useBackButton'
 
 export default function BuyNowPage() {
   const location = useLocation()
@@ -195,6 +196,15 @@ export default function BuyNowPage() {
     navigate('/products')
   }
 
+  const handleBack = () => {
+    // Close any open UI first
+    const handled = dispatchBackButton()
+    // Only navigate if no UI was closed
+    if (!handled) {
+      navigate(-1)
+    }
+  }
+
   // Handle profile modal close
   const handleProfileModalClose = () => {
     setShowProfileModal(false)
@@ -264,7 +274,7 @@ export default function BuyNowPage() {
         {/* Header */}
         <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             style={{
               padding: '0.5rem 0.75rem',
               borderRadius: '8px',
