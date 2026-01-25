@@ -6,6 +6,12 @@ let uiStack = []
 let backButtonHandler = null
 // Flag for native code to check synchronously
 let hasOpenUIFlag = false
+// Global navigation ref for React Router
+let navigationRef = null
+// Global location ref for React Router
+let locationRef = null
+// Root routes that should exit the app when back is pressed
+const ROOT_ROUTES = ['/auth', '/dashboard']
 
 /**
  * Check if there are any open UI components
@@ -63,6 +69,23 @@ export function registerUI(id, onClose) {
 }
 
 /**
+ * Set the navigation ref for React Router navigation
+ * @param {Object} navigate - React Router's navigate function
+ */
+export function setNavigationRef(navigate) {
+  navigationRef = navigate
+  console.log('[BackButton] Navigation ref set')
+}
+
+/**
+ * Set the location ref for React Router location tracking
+ * @param {Object} location - React Router's location object
+ */
+export function setLocationRef(location) {
+  locationRef = location
+}
+
+/**
  * Handle back button press
  */
 function handleBackButton() {
@@ -84,8 +107,43 @@ function handleBackButton() {
     return true
   }
   
-  // No UI to close, allow default behavior
+  // No UI to close, handle React Router navigation
   updateNativeFlag()
+  
+  // Check if we're on a root route - if so, exit the app
+  if (locationRef) {
+    const currentPath = locationRef.pathname
+    if (ROOT_ROUTES.includes(currentPath)) {
+      console.log('[BackButton] On root route, exiting app:', currentPath)
+      // Exit app for root routes
+      App.exitApp().catch(err => {
+        console.error('[BackButton] Error exiting app:', err)
+      })
+      return true // Prevent default behavior
+    }
+  }
+  
+  // If navigation ref is available, use React Router navigation
+  if (navigationRef) {
+    try {
+      // Check if we can go back in history
+      const canGoBack = window.history.length > 1
+      
+      if (canGoBack) {
+        console.log('[BackButton] Navigating back via React Router')
+        navigationRef(-1)
+        return true // Prevent default behavior
+      } else {
+        console.log('[BackButton] Cannot go back, at root route')
+        return false // Allow default behavior (exit app)
+      }
+    } catch (error) {
+      console.error('[BackButton] Error navigating:', error)
+      return false
+    }
+  }
+  
+  // No navigation ref available, allow default behavior
   return false
 }
 
@@ -96,7 +154,7 @@ function handleBackButton() {
 export function dispatchBackButton() {
   const handled = handleBackButton()
   if (handled) {
-    // UI was closed, prevent further back button handling
+    // UI was closed, navigation handled, or app exited - prevent further back button handling
     return true
   }
   return false
@@ -123,19 +181,32 @@ export function initBackButtonListener() {
   App.addListener('backButton', ({ canGoBack }) => {
     const handled = dispatchBackButton()
     if (handled) {
-      // UI was closed, prevent default back behavior
+      // UI was closed or navigation handled, prevent default back behavior
       return
     }
     
-    // No UI to close - handle navigation
-    // Note: MainActivity handles the actual navigation via WebView.goBack()
-    // This listener is mainly for Capacitor's App plugin integration
+    // No UI to close and navigation not handled - check if we can exit
     if (uiStack.length === 0) {
-      if (!canGoBack) {
+      // Check if we're on a root route
+      if (locationRef) {
+        const currentPath = locationRef.pathname
+        if (ROOT_ROUTES.includes(currentPath)) {
+          // On root route, exit app
+          console.log('[BackButton] On root route, exiting app:', currentPath)
+          App.exitApp()
+          return
+        }
+      }
+      
+      // Check if we can navigate back using React Router
+      const canNavigateBack = navigationRef && window.history.length > 1
+      
+      if (!canNavigateBack && !canGoBack) {
         // Can't go back in navigation and no UIs open, exit app
+        console.log('[BackButton] Exiting app - no navigation available')
         App.exitApp()
       }
-      // If canGoBack is true, MainActivity will handle navigation
+      // If navigation was handled by React Router, we already returned above
     }
   }).then(listener => {
     backButtonHandler = listener
@@ -144,14 +215,19 @@ export function initBackButtonListener() {
     console.warn('[BackButton] Failed to initialize listener (may be running in browser):', err)
   })
   
-  // Also handle browser back button
+  // Also handle browser back button (for web/desktop testing)
+  // This is mainly for development/testing in browser
   if (typeof window !== 'undefined' && window.history) {
     window.addEventListener('popstate', (event) => {
-      const handled = dispatchBackButton()
-      if (handled) {
-        // Push state back to prevent navigation
-        window.history.pushState(null, '', window.location.href)
+      // Only handle if there are open UIs - otherwise let React Router handle navigation
+      if (uiStack.length > 0) {
+        const handled = dispatchBackButton()
+        if (handled) {
+          // UI was closed, prevent the navigation by pushing state back
+          window.history.pushState(null, '', window.location.href)
+        }
       }
+      // If no UIs are open, allow the popstate to proceed normally (React Router will handle it)
     })
   }
 }
