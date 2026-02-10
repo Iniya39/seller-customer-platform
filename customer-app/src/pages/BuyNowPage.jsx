@@ -224,7 +224,6 @@ export default function BuyNowPage() {
         padding: '2rem', 
         textAlign: 'center', 
         background: '#f8fafc',
-        paddingTop: 'var(--safe-top)', 
         paddingBottom: 'var(--safe-bottom)',
         display: 'flex',
         alignItems: 'center',
@@ -282,7 +281,6 @@ export default function BuyNowPage() {
     <div style={{ 
       height: '100dvh', 
       background: '#f8fafc', 
-      paddingTop: 'var(--safe-top)', 
       paddingBottom: 'var(--safe-bottom)',
       display: 'flex',
       flexDirection: 'column',

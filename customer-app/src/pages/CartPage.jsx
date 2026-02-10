@@ -173,7 +173,6 @@ export default function CartPage() {
         padding: '2rem', 
         textAlign: 'center', 
         background: '#f8fafc',
-        paddingTop: 'var(--safe-top)', 
         paddingBottom: 'var(--safe-bottom)',
         display: 'flex',
         alignItems: 'center',
@@ -192,7 +191,6 @@ export default function CartPage() {
         textAlign: 'center', 
         color: '#dc2626',
         background: '#f8fafc',
-        paddingTop: 'var(--safe-top)', 
         paddingBottom: 'var(--safe-bottom)',
         display: 'flex',
         flexDirection: 'column',
@@ -257,7 +255,6 @@ export default function CartPage() {
       <div style={{ 
         height: '100dvh', 
         background: '#f8fafc', 
-        paddingTop: 'var(--safe-top)', 
         paddingBottom: 'var(--safe-bottom)',
         display: 'flex',
         flexDirection: 'column',

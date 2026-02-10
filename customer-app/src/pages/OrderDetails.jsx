@@ -43,7 +43,6 @@ export default function OrderDetails() {
         justifyContent: "center", 
         alignItems: "center", 
         background: "#f8fafc",
-        paddingTop: "var(--safe-top)", 
         paddingBottom: "var(--safe-bottom)" 
       }}>
         <p>Loading order...</p>
@@ -69,7 +68,6 @@ export default function OrderDetails() {
         justifyContent: "center", 
         alignItems: "center", 
         background: "#f8fafc",
-        paddingTop: "var(--safe-top)", 
         paddingBottom: "var(--safe-bottom)" 
       }}>
         <div>
@@ -85,7 +83,6 @@ export default function OrderDetails() {
       height: "100dvh", 
       width: "100%", 
       background: "#f8fafc",
-      paddingTop: "var(--safe-top)",
       paddingBottom: "var(--safe-bottom)",
       display: "flex",
       flexDirection: "column",

@@ -92,9 +92,12 @@ export default function Dashboard() {
     <div
       style={{
         minHeight: '100dvh',
+        height: '100dvh',
         background: '#ffffff',
-        paddingTop: 'var(--safe-top)',
-        paddingBottom: 'var(--safe-bottom)'
+        paddingBottom: 'var(--safe-bottom)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
       }}
     >
       {/* Sidebar */}
@@ -104,18 +107,26 @@ export default function Dashboard() {
       <div
         ref={headerRef}
         style={{
-          background: 'white',
+          backgroundColor: '#ffffff',
           borderBottom: '1px solid #e5e7eb',
           padding: '1rem 0',
           position: 'fixed',
-          top: 'var(--safe-top)',
+          top: 'env(safe-area-inset-top, 0px)',
           left: 0,
           right: 0,
           zIndex: 100,
-          width: '100%'
+          width: '100%',
+          isolation: 'isolate',
+          WebkitBackfaceVisibility: 'hidden',
+          backfaceVisibility: 'hidden'
         }}
       >
-        <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '0 1.25rem' }}>
+        <div style={{
+  maxWidth: '1200px',
+  margin: '0 auto',
+  padding: '0 1.25rem'
+}}>
+
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -170,22 +181,26 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Products List */}
+      {/* Scrollable content area - clipped below header */}
       <div
         style={{
-          marginTop: headerHeight || '120px'
+          flex: 1,
+          minHeight: 0,
+          marginTop: `${headerHeight || 150}px`,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div
-          style={{
-            maxWidth: 'min(1200px, 100%)',
-            margin: '0 auto',
-            padding: 'clamp(1.25rem, 3vw, 2rem) 1.25rem'
-          }}
-        >
+        <div style={{
+  maxWidth: '1200px',
+  margin: '0 auto',
+  padding: 'clamp(1.25rem, 3vw, 2rem) 1.25rem'
+}}>
+
+
           <ProductsList searchTerm={searchTerm} />
         </div>
-      </div>
       {/* Footer */}
       <footer style={{ background: '#f1f5f9', padding: '1.5rem 0', marginTop: 'auto' }}>
         <div style={{
@@ -212,12 +227,12 @@ export default function Dashboard() {
           
           
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', letterSpacing: '0.02em' }}>
-              DreamSync Creations
-            </span>
+            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>App developed by</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', letterSpacing: '0.02em' }}>DreamSync Creations</span>
           </div>
         </div>
       </footer>
+      </div>
 
       {/* Profile Modal */}
       <ProfileModal 

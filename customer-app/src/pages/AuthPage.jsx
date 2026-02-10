@@ -14,7 +14,7 @@ export default function AuthPage() {
       justifyContent: 'center',
       background: '#ffffff',
       padding: 'clamp(1.25rem, 3vw, 2.5rem)',
-      paddingTop: 'calc(var(--safe-top) + clamp(1.25rem, 3vw, 2.5rem))',
+      paddingTop: 'clamp(1.25rem, 3vw, 2.5rem)',
       paddingBottom: 'calc(var(--safe-bottom) + clamp(1.25rem, 3vw, 2.5rem))'
     }}>
       <div style={{

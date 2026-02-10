@@ -22,7 +22,6 @@ export default function ProductsPage() {
     <div style={{ 
       height: '100dvh', 
       background: '#f8fafc', 
-      paddingTop: 'var(--safe-top)', 
       paddingBottom: 'var(--safe-bottom)',
       display: 'flex',
       flexDirection: 'column',
