@@ -45,9 +45,8 @@ export default function AuthPage() {
               const name = form.get('name')
 
               // Check if phone number is permitted by seller
-              // const checkRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/customers/check`, {
-                const checkRes = await fetch(`${getApiUrl()}/customers/check`, {  
-              method: 'POST',
+              const checkRes = await fetch(`${getApiUrl()}/customers/check`, {  
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone })
               })
@@ -57,7 +56,8 @@ export default function AuthPage() {
                 throw new Error('Your phone number is not registered. Please contact the store owner to get access.')
               }
 
-              // Check if it's been more than 3 months since last login
+              // Clear old session data if it's expired (allow fresh login)
+              // The backend will handle session validation, so we just clean up stale localStorage
               const lastLogin = localStorage.getItem('lastLogin')
               if (lastLogin) {
                 const lastLoginDate = new Date(lastLogin)
@@ -65,7 +65,10 @@ export default function AuthPage() {
                 threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
                 
                 if (lastLoginDate < threeMonthsAgo) {
-                  throw new Error('Your session has expired. Please contact the store owner to renew your access.')
+                  // Clear expired session data to allow fresh login
+                  localStorage.removeItem('lastLogin')
+                  localStorage.removeItem('lastLoginTime')
+                  localStorage.removeItem('user')
                 }
               }
 

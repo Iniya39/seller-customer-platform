@@ -37,7 +37,15 @@ export default function OrderDetails() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh", paddingTop: "var(--safe-top)", paddingBottom: "var(--safe-bottom)" }}>
+      <div style={{ 
+        height: "100dvh", 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        background: "#f8fafc",
+        paddingTop: "var(--safe-top)", 
+        paddingBottom: "var(--safe-bottom)" 
+      }}>
         <p>Loading order...</p>
       </div>
     );
@@ -54,7 +62,16 @@ export default function OrderDetails() {
 
   if (error || !order) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh", paddingTop: "var(--safe-top)", paddingBottom: "var(--safe-bottom)" }}>
+      <div style={{ 
+        height: "100dvh", 
+        display: "flex", 
+        flexDirection: "column",
+        justifyContent: "center", 
+        alignItems: "center", 
+        background: "#f8fafc",
+        paddingTop: "var(--safe-top)", 
+        paddingBottom: "var(--safe-bottom)" 
+      }}>
         <div>
           <p style={{ marginBottom: "1rem" }}>{error || "Order not found"}</p>
           <button onClick={handleBack} style={{ padding: "0.6rem 1rem", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f3f4f6", cursor: "pointer" }}>Go back</button>
@@ -65,26 +82,31 @@ export default function OrderDetails() {
 
   return (
     <div style={{ 
-    display: "flex", 
-    flexDirection: "column", 
-    alignItems: "center", 
-    minHeight: "100dvh", 
-    width: "100%", 
-      maxWidth: 1000, 
-      margin: "0 auto", 
-      padding: "2rem",
-      background: "#f8fafc"
+      height: "100dvh", 
+      width: "100%", 
+      background: "#f8fafc",
+      paddingTop: "var(--safe-top)",
+      paddingBottom: "var(--safe-bottom)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden"
     }}>
       <div style={{
         background: "white",
         borderRadius: "16px",
         padding: "2rem",
-        maxWidth: "800px",
+        maxWidth: "min(800px, 95%)",
         width: "100%",
-        maxHeight: "90vh",
-        overflow: "auto",
+        maxHeight: "calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2rem)",
+        height: "auto",
+        overflowY: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch",
         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-        position: "relative"
+        position: "relative",
+        margin: "1rem"
       }}>
         {/* Close Button */}
         <button 

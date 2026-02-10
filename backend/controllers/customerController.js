@@ -161,14 +161,33 @@ const deleteCustomer = async (req, res) => {
 // Check if phone number is permitted
 const checkPhoneNumber = async (req, res) => {
   try {
-    const { phone } = req.body;
-
-    const customer = await Customer.findOne({ phone, isActive: true });
-    if (!customer) {
-      return res.status(404).json({ error: 'Phone number not registered. Please contact the store owner to get access.' });
+    // Check if request body exists
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ 
+        error: 'Request body is missing. Please send a JSON body with a phone field.' 
+      });
     }
 
-    res.json({ 
+    // Extract phone from request body
+    const { phone } = req.body;
+
+    // Validate phone is provided
+    if (!phone || typeof phone !== 'string' || phone.trim() === '') {
+      return res.status(400).json({ 
+        error: 'Phone number is required. Please provide a phone field in the request body.' 
+      });
+    }
+
+    // Check if phone number exists and is active
+    const customer = await Customer.findOne({ phone, isActive: true });
+    if (!customer) {
+      return res.status(404).json({ 
+        error: 'Phone number not registered. Please contact the store owner to get access.' 
+      });
+    }
+
+    // Return success response
+    return res.status(200).json({ 
       message: 'Phone number is registered',
       customer: {
         name: customer.name,
@@ -177,7 +196,10 @@ const checkPhoneNumber = async (req, res) => {
     });
   } catch (error) {
     console.error('Error checking phone number:', error);
-    res.status(500).json({ error: 'Failed to check phone number' });
+    return res.status(500).json({ 
+      error: 'Failed to check phone number',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

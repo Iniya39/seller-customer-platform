@@ -1389,6 +1389,19 @@ function ProductDetailModal({
 }) {
   // Register with back button handler
   useBackButton('product-detail-modal', !!product, onClose)
+  
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (product) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [product])
+  
   return (
     <>
       <style>{`
@@ -1410,6 +1423,7 @@ function ProductDetailModal({
           width: 100%;
           max-width: 100vw;
           box-sizing: border-box;
+          margin: 0;
         }
         
         .product-detail-modal-container {

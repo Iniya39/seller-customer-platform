@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import logo from '../assets/dreamsync-logo.svg'
+
+import { useState, useEffect , useRef} from 'react'
 import { useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import UserProfileIcon from '../components/UserProfileIcon'
@@ -49,6 +51,8 @@ const useLogo = () => {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const headerRef = useRef(null)
+  const [headerHeight, setHeaderHeight] = useState(0)
   
   const userPayload = (() => {
     try {
@@ -63,7 +67,7 @@ export default function Dashboard() {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { fetchCartCount } = useCart()
-  const { logoUrl, loading: logoLoading } = useLogo()
+  // const { logoUrl, loading: logoLoading } = useLogo()
 
 
 
@@ -72,20 +76,45 @@ export default function Dashboard() {
     fetchCartCount()
   }, [])
 
+  // Measure header height for proper content spacing
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight)
+      }
+    }
+    updateHeaderHeight()
+    window.addEventListener('resize', updateHeaderHeight)
+    return () => window.removeEventListener('resize', updateHeaderHeight)
+  }, [])
+
   return (
-    <div style={{ minHeight: '100dvh', background: '#ffffff', display: 'flex', flexDirection: 'column', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: '#ffffff',
+        paddingTop: 'var(--safe-top)',
+        paddingBottom: 'var(--safe-bottom)'
+      }}
+    >
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Header with Profile Icon, Menu Button, and Search Bar */}
-      <div style={{
-        background: 'white',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '1rem 0',
-        position: 'sticky',
-        top: 'var(--safe-top)',
-        zIndex: 100
-      }}>
+      <div
+        ref={headerRef}
+        style={{
+          background: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '1rem 0',
+          position: 'fixed',
+          top: 'var(--safe-top)',
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          width: '100%'
+        }}
+      >
         <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '0 1.25rem' }}>
           <div style={{
             display: 'flex',
@@ -142,12 +171,21 @@ export default function Dashboard() {
       </div>
 
       {/* Products List */}
-      <div style={{ flex: 1 }}>
-        <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: 'clamp(1.25rem, 3vw, 2rem) 1.25rem' }}>
+      <div
+        style={{
+          marginTop: headerHeight || '120px'
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 'min(1200px, 100%)',
+            margin: '0 auto',
+            padding: 'clamp(1.25rem, 3vw, 2rem) 1.25rem'
+          }}
+        >
           <ProductsList searchTerm={searchTerm} />
         </div>
       </div>
-
       {/* Footer */}
       <footer style={{ background: '#f1f5f9', padding: '1.5rem 0', marginTop: 'auto' }}>
         <div style={{
@@ -161,20 +199,18 @@ export default function Dashboard() {
           flexWrap: 'wrap',
           textAlign: 'center'
         }}>
-          {!logoLoading && logoUrl && (
+         
             <img
-              src={logoUrl}
-              alt="DreamSync Creations logo"
+            src={logo}
+            alt="DreamSync Creations logo"
               style={{ height: '52px', width: 'auto' }}
               onError={(e) => {
                 // Fallback to local logo if ImageKit URL fails to load
                 e.target.src = resolveImageUrl('/uploads/dreamsync-logo.svg')
               }}
             />
-          )}
-          {logoLoading && (
-            <div style={{ height: '52px', width: '52px', background: '#e5e7eb', borderRadius: '4px' }} />
-          )}
+          
+          
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', letterSpacing: '0.02em' }}>
               DreamSync Creations

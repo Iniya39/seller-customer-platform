@@ -4,6 +4,18 @@ import { useBackButton } from '../hooks/useBackButton'
 export default function ProfileModal({ isOpen, onClose }) {
   // Register with back button handler
   useBackButton('profile-modal', isOpen, onClose)
+  
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [isOpen])
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')

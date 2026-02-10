@@ -19,8 +19,24 @@ export default function ProductsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
-      <div style={{ maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '1.25rem' }}>
+    <div style={{ 
+      height: '100dvh', 
+      background: '#f8fafc', 
+      paddingTop: 'var(--safe-top)', 
+      paddingBottom: 'var(--safe-bottom)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      <div style={{ 
+        maxWidth: 'min(1200px, 100%)', 
+        margin: '0 auto', 
+        padding: '1.25rem',
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch'
+      }}>
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

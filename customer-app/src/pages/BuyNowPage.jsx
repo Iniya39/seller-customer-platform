@@ -219,7 +219,17 @@ export default function BuyNowPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <div style={{ 
+        height: '100dvh', 
+        padding: '2rem', 
+        textAlign: 'center', 
+        background: '#f8fafc',
+        paddingTop: 'var(--safe-top)', 
+        paddingBottom: 'var(--safe-bottom)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
         <div>Loading product details...</div>
       </div>
     )
@@ -269,8 +279,24 @@ export default function BuyNowPage() {
     : product.stockStatus === 'out_of_stock'
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#f8fafc', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
-      <div style={{ maxWidth: 'min(800px, 100%)', margin: '0 auto', padding: '1.5rem 1.25rem' }}>
+    <div style={{ 
+      height: '100dvh', 
+      background: '#f8fafc', 
+      paddingTop: 'var(--safe-top)', 
+      paddingBottom: 'var(--safe-bottom)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      <div style={{ 
+        maxWidth: 'min(800px, 100%)', 
+        margin: '0 auto', 
+        padding: '1.5rem 1.25rem',
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch'
+      }}>
         {/* Header */}
         <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
