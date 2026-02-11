@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import SplashScreen from './components/SplashScreen.jsx'
+import StatusBarTheme from './components/StatusBarTheme.jsx'
 import AuthPage from './pages/AuthPage.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import ProductsPage from './pages/ProductsPage.jsx'
@@ -44,6 +45,7 @@ export default function App() {
   return (
     <>
       <NavigationSetup />
+      <StatusBarTheme />
       <Routes>
         <Route path="/" element={<SplashScreen />} />
         <Route path="/auth" element={<AuthPage />} />

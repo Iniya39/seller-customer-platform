@@ -172,6 +172,7 @@ export default function OrdersPage() {
           margin: '0 auto', 
           padding: '1.5rem 1.25rem',
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch'
